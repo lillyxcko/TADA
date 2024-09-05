@@ -3,7 +3,7 @@ import CircleNode from './CircleNode';
 
 const Diagram = () => {
   return (
-    <svg width="400" height="400" className="diagram">
+    <svg width="400" height="400">
       {/* First circle node */}
       <CircleNode cx={100} cy={200} r={50} pitch="C4" />
       {/* Second circle node with a different pitch */}
