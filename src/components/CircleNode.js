@@ -6,12 +6,36 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
   const oscillatorRef = useRef(null);
 
   // Function to start playing the sound
+
+  /*
   const startSound = () => {
     // Initialize the AudioContext if it's not already initialized
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
 
+    // Create and start an oscillator if it hasn't been created yet
+    if (!oscillatorRef.current) {
+      const osc = audioContextRef.current.createOscillator();
+      osc.type = 'sine'; // Type of sound wave (sine, square, etc.)
+      osc.frequency.setValueAtTime(pitch, audioContextRef.current.currentTime); // Set pitch
+      osc.connect(audioContextRef.current.destination); // Connect to speakers
+      osc.start();
+      oscillatorRef.current = osc;
+    }
+  };*/
+
+  const startSound = () => {
+    // Create the AudioContext after a user gesture if not already initialized
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  
+    // Check if the AudioContext is in suspended state and resume it
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+  
     // Create and start an oscillator if it hasn't been created yet
     if (!oscillatorRef.current) {
       const osc = audioContextRef.current.createOscillator();
