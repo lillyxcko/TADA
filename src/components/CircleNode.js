@@ -1,86 +1,84 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 
 const CircleNode = ({ cx, cy, r, pitch }) => {
-  // UseRef to persist the audio context and oscillator across renders
   const audioContextRef = useRef(null);
   const oscillatorRef = useRef(null);
-  const [isInsideCircle, setIsInsideCircle] = useState(false); // Track touch status inside the circle
+  const isInsideRef = useRef(false); // Track if the touch is inside the circle
 
-  // Function to create AudioContext if not already created and handle Safari/iOS issues
+  // Function to create AudioContext if not already created
   const initializeAudioContext = () => {
-    // Create the AudioContext after a user gesture if not already initialized
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
-
-    // Check if the AudioContext is in suspended state and resume it - for mobile/Safari
     if (audioContextRef.current.state === 'suspended') {
       audioContextRef.current.resume().catch(err => console.log('AudioContext resume failed', err));
     }
   };
 
-  // Function to start playing the sound
   const startSound = () => {
     initializeAudioContext();
-
-    // Create and start an oscillator if not created yet
     if (!oscillatorRef.current && audioContextRef.current) {
       const osc = audioContextRef.current.createOscillator();
-      osc.type = 'sine'; // Type of sound wave (sine, square, etc.)
-      osc.frequency.setValueAtTime(pitch, audioContextRef.current.currentTime); // Set pitch
-      osc.connect(audioContextRef.current.destination); // Connect to speakers
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(pitch, audioContextRef.current.currentTime);
+      osc.connect(audioContextRef.current.destination);
       osc.start();
       oscillatorRef.current = osc;
     }
   };
 
-  // Function to stop playing the sound
   const stopSound = () => {
     if (oscillatorRef.current) {
-      oscillatorRef.current.stop(); // Stop the sound
-      oscillatorRef.current = null; // Clear the oscillator
+      oscillatorRef.current.stop();
+      oscillatorRef.current = null;
     }
   };
 
-  // Check if the touch is inside the circle
-  const isTouchInsideCircle = (touchX, touchY, circle) => {
-    return (
-      touchX > circle.left &&
-      touchX < circle.right &&
-      touchY > circle.top &&
-      touchY < circle.bottom
-    );
-  };
-
-  // Handle touch start: Do nothing until they drag into the circle
-  const handleTouchStart = () => {
-    setIsInsideCircle(false); // Initially, the touch is outside the circle
-  };
-
-  // Handle touch move: Start sound when finger moves into the circle
+  // Handle touch move (enter/leave behavior)
   const handleTouchMove = (e) => {
     const touch = e.touches[0];
     const circle = e.target.getBoundingClientRect();
     const touchX = touch.clientX;
     const touchY = touch.clientY;
 
-    if (isTouchInsideCircle(touchX, touchY, circle)) {
-      if (!isInsideCircle) {
-        startSound();  // Start sound when the finger enters the circle
-        setIsInsideCircle(true);  // Mark as inside the circle
-      }
-    } else {
-      if (isInsideCircle) {
-        stopSound();  // Stop sound if the finger leaves the circle
-        setIsInsideCircle(false);  // Mark as outside the circle
-      }
+    // Check if touch is inside the circle
+    const isInside = (
+      touchX > circle.left &&
+      touchX < circle.right &&
+      touchY > circle.top &&
+      touchY < circle.bottom
+    );
+
+    console.log(`Touch coordinates: X=${touchX}, Y=${touchY}`);
+    console.log(`Circle bounding box: Left=${circle.left}, Right=${circle.right}, Top=${circle.top}, Bottom=${circle.bottom}`);
+    console.log(`isInside: ${isInside}, isInsideRef.current: ${isInsideRef.current}`);
+
+    // If the touch enters the circle (from outside), start the sound
+    if (isInside && !isInsideRef.current) {
+      console.log('Touch entered the circle');
+      startSound();
+      isInsideRef.current = true;
+    } 
+    // If the touch leaves the circle, stop the sound
+    else if (!isInside && isInsideRef.current) {
+      console.log('Touch left the circle');
+      stopSound();
+      isInsideRef.current = false;
     }
   };
 
-  // Handle touch end: Stop sound when the finger is lifted
+  // Handle touch start
+  const handleTouchStart = (e) => {
+    startSound();
+    isInsideRef.current = true;
+    console.log('Touch started');
+  };
+
+  // Handle touch end
   const handleTouchEnd = () => {
     stopSound();
-    setIsInsideCircle(false);  // Reset when the finger is lifted
+    isInsideRef.current = false; // Reset state after touch ends
+    console.log('Touch ended');
   };
 
   return (
@@ -90,15 +88,13 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
       r={r}
       fill="white"
       fillOpacity={0.9}
-      // Maintain current mouse functionality
       onMouseDown={startSound}    // Start sound on mouse down
       onMouseUp={stopSound}       // Stop sound on mouse up
-      onMouseEnter={startSound}   // Start sound when dragging over the circle with the mouse
-      onMouseLeave={stopSound}    // Stop sound when the mouse leaves the circle
-      // Handle touch events for mobile devices
-      onTouchStart={handleTouchStart}  // Detect touch but don't trigger sound yet
-      onTouchMove={handleTouchMove}    // Track movement, start sound if finger enters the circle
-      onTouchEnd={handleTouchEnd}      // Stop sound when the finger is lifted
+      onMouseEnter={startSound}   // Start sound when mouse enters the circle
+      onMouseLeave={stopSound}    // Stop sound when mouse leaves the circle
+      onTouchStart={handleTouchStart} // Log when touch starts
+      onTouchEnd={handleTouchEnd} // Stop sound on touch end for mobile
+      onTouchMove={handleTouchMove} // Start/stop sound when dragging over/away from the circle (enter/leave behavior)
       style={{ cursor: 'pointer' }}
     />
   );
