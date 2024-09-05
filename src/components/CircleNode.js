@@ -1,26 +1,33 @@
 import React, { useState } from 'react';
-import * as Tone from 'tone';
 
 const CircleNode = ({ cx, cy, r, pitch }) => {
-  const [synth, setSynth] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioContext, setAudioContext] = useState(null);
+  const [oscillator, setOscillator] = useState(null);
 
   // Function to start playing the sound
   const startSound = () => {
-    if (!isPlaying) {
-      const newSynth = new Tone.Synth().toDestination();
-      newSynth.triggerAttack(pitch); // Start the sound
-      setSynth(newSynth);
-      setIsPlaying(true);
+    // Initialize the AudioContext on the first interaction
+    if (!audioContext) {
+      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+      setAudioContext(newAudioContext);
+    }
+
+    // Create an oscillator (if not already created)
+    if (!oscillator && audioContext) {
+      const osc = audioContext.createOscillator();
+      osc.type = 'sine'; // Type of sound wave (sine, square, etc.)
+      osc.frequency.setValueAtTime(pitch, audioContext.currentTime); // Frequency determines the pitch
+      osc.connect(audioContext.destination); // Connect to speakers
+      osc.start();
+      setOscillator(osc);
     }
   };
 
   // Function to stop playing the sound
   const stopSound = () => {
-    if (synth) {
-      synth.triggerRelease(); // Stop the sound
-      setIsPlaying(false);
-      setSynth(null);
+    if (oscillator) {
+      oscillator.stop(); // Stop the sound
+      setOscillator(null); // Clear the oscillator
     }
   };
 
@@ -36,6 +43,23 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
       onMouseLeave={stopSound}    // Stop sound when the cursor/finger leaves the circle
       onTouchStart={startSound}   // Start sound on touch start for mobile
       onTouchEnd={stopSound}      // Stop sound on touch end for mobile
+      onTouchMove={(e) => {       // Handle dragging over the circle on touch
+        const touch = e.touches[0];
+        const circle = e.target.getBoundingClientRect();
+        const touchX = touch.clientX;
+        const touchY = touch.clientY;
+
+        if (
+          touchX > circle.left &&
+          touchX < circle.right &&
+          touchY > circle.top &&
+          touchY < circle.bottom
+        ) {
+          startSound();
+        } else {
+          stopSound();
+        }
+      }}
       style={{ cursor: 'pointer' }}
     />
   );
