@@ -1,33 +1,33 @@
-import React, { useState } from 'react';
+import React, { useRef } from 'react';
 
 const CircleNode = ({ cx, cy, r, pitch }) => {
-  const [audioContext, setAudioContext] = useState(null);
-  const [oscillator, setOscillator] = useState(null);
+  // UseRef to persist the audio context and oscillator across renders
+  const audioContextRef = useRef(null);
+  const oscillatorRef = useRef(null);
 
   // Function to start playing the sound
   const startSound = () => {
-    // Initialize the AudioContext on the first interaction
-    if (!audioContext) {
-      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-      setAudioContext(newAudioContext);
+    // Initialize the AudioContext if it's not already initialized
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
 
-    // Create an oscillator (if not already created)
-    if (!oscillator && audioContext) {
-      const osc = audioContext.createOscillator();
+    // Create and start an oscillator if it hasn't been created yet
+    if (!oscillatorRef.current) {
+      const osc = audioContextRef.current.createOscillator();
       osc.type = 'sine'; // Type of sound wave (sine, square, etc.)
-      osc.frequency.setValueAtTime(pitch, audioContext.currentTime); // Frequency determines the pitch
-      osc.connect(audioContext.destination); // Connect to speakers
+      osc.frequency.setValueAtTime(pitch, audioContextRef.current.currentTime); // Set pitch
+      osc.connect(audioContextRef.current.destination); // Connect to speakers
       osc.start();
-      setOscillator(osc);
+      oscillatorRef.current = osc;
     }
   };
 
   // Function to stop playing the sound
   const stopSound = () => {
-    if (oscillator) {
-      oscillator.stop(); // Stop the sound
-      setOscillator(null); // Clear the oscillator
+    if (oscillatorRef.current) {
+      oscillatorRef.current.stop(); // Stop the sound
+      oscillatorRef.current = null; // Clear the oscillator
     }
   };
 
