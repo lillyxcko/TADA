@@ -3,18 +3,23 @@ import * as Tone from 'tone';
 
 const CircleNode = ({ cx, cy, r, pitch }) => {
   const [synth, setSynth] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  // Function to start playing the sound when the button is pressed
+  // Function to start playing the sound
   const startSound = () => {
-    const newSynth = new Tone.Synth().toDestination();
-    newSynth.triggerAttack(pitch); // Starts the sound without releasing it
-    setSynth(newSynth);
+    if (!isPlaying) {
+      const newSynth = new Tone.Synth().toDestination();
+      newSynth.triggerAttack(pitch); // Start the sound
+      setSynth(newSynth);
+      setIsPlaying(true);
+    }
   };
 
-  // Function to stop playing the sound when the button is released
+  // Function to stop playing the sound
   const stopSound = () => {
     if (synth) {
-      synth.triggerRelease(); // Stops the sound when the mouse/touch is released
+      synth.triggerRelease(); // Stop the sound
+      setIsPlaying(false);
       setSynth(null);
     }
   };
@@ -24,13 +29,31 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
       cx={cx}
       cy={cy}
       r={r}
-      fill="black"
-      onMouseDown={startSound}   // Start sound on mouse down
-      onMouseUp={stopSound}      // Stop sound on mouse up
-      onMouseLeave={stopSound}   // Stop sound if the mouse leaves the circle while holding
-      onTouchStart={startSound}  // Start sound on touch start (for mobile)
-      onTouchEnd={stopSound}     // Stop sound on touch end (for mobile)
-      style={{ cursor: 'pointer' }} // Optional: change cursor when hovering
+      fill="blue"
+      onMouseDown={startSound}    // Start sound on mouse down
+      onMouseUp={stopSound}       // Stop sound on mouse up
+      onMouseEnter={startSound}   // Trigger sound when dragging over the circle
+      onMouseLeave={stopSound}    // Stop sound when the cursor/finger leaves the circle
+      onTouchStart={startSound}   // Start sound on touch start for mobile
+      onTouchEnd={stopSound}      // Stop sound on touch end for mobile
+      onTouchMove={(e) => {       // Trigger sound when dragging over the circle on touch
+        const touch = e.touches[0];
+        const circle = e.target.getBoundingClientRect();
+        const touchX = touch.clientX;
+        const touchY = touch.clientY;
+        
+        if (
+          touchX > circle.left &&
+          touchX < circle.right &&
+          touchY > circle.top &&
+          touchY < circle.bottom
+        ) {
+          startSound();
+        } else {
+          stopSound();
+        }
+      }}
+      style={{ cursor: 'pointer' }}
     />
   );
 };
