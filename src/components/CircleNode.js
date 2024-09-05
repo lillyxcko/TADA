@@ -7,10 +7,12 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
 
   // Function to start playing the sound
   const startSound = async () => {
-    await Tone.start(); // Ensure the AudioContext is resumed
+    // Ensure the AudioContext is resumed on mobile
+    await Tone.start();
+    
     if (!isPlaying) {
       const newSynth = new Tone.Synth().toDestination();
-      newSynth.triggerAttack(pitch); // Start the sound and hold it
+      newSynth.triggerAttack(pitch); // Start the sound
       setSynth(newSynth);
       setIsPlaying(true);
     }
@@ -18,28 +20,10 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
 
   // Function to stop playing the sound
   const stopSound = () => {
-    if (synth && isPlaying) {
+    if (synth) {
       synth.triggerRelease(); // Stop the sound
       setIsPlaying(false);
       setSynth(null);
-    }
-  };
-
-  // Handle touch move to detect if the user moves out of the circle
-  const handleTouchMove = (e) => {
-    const touch = e.touches[0];
-    const circle = e.target.getBoundingClientRect();
-    const touchX = touch.clientX;
-    const touchY = touch.clientY;
-
-    // Check if the touch is outside the circle's bounding box
-    if (
-      touchX < circle.left ||
-      touchX > circle.right ||
-      touchY < circle.top ||
-      touchY > circle.bottom
-    ) {
-      stopSound(); // Stop the sound if touch moves out
     }
   };
 
@@ -55,7 +39,23 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
       onMouseLeave={stopSound}    // Stop sound when the cursor/finger leaves the circle
       onTouchStart={startSound}   // Start sound on touch start for mobile
       onTouchEnd={stopSound}      // Stop sound on touch end for mobile
-      onTouchMove={handleTouchMove} // Check for touch move outside the circle and stop sound
+      onTouchMove={(e) => {       // Trigger sound when dragging over the circle on touch
+        const touch = e.touches[0];
+        const circle = e.target.getBoundingClientRect();
+        const touchX = touch.clientX;
+        const touchY = touch.clientY;
+
+        if (
+          touchX > circle.left &&
+          touchX < circle.right &&
+          touchY > circle.top &&
+          touchY < circle.bottom
+        ) {
+          startSound();
+        } else {
+          stopSound();
+        }
+      }}
       style={{ cursor: 'pointer' }}
     />
   );
