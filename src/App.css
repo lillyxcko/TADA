@@ -1,7 +1,14 @@
+
+
+/* Disable scrolling */
+html, body {
+  overflow: hidden;
+  height: 100%;
+}
+
 .app-container {
+  height: 100vh; /* the app container takes up the full viewport */
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
 }
-
