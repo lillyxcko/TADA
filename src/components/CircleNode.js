@@ -7,12 +7,10 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
 
   // Function to start playing the sound
   const startSound = async () => {
-    // Ensure the AudioContext is resumed on mobile
-    await Tone.start();
-    
+    await Tone.start(); // Ensure the AudioContext is resumed
     if (!isPlaying) {
       const newSynth = new Tone.Synth().toDestination();
-      newSynth.triggerAttack(pitch); // Start the sound
+      newSynth.triggerAttack(pitch); // Start the sound and hold it
       setSynth(newSynth);
       setIsPlaying(true);
     }
@@ -20,10 +18,28 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
 
   // Function to stop playing the sound
   const stopSound = () => {
-    if (synth) {
+    if (synth && isPlaying) {
       synth.triggerRelease(); // Stop the sound
       setIsPlaying(false);
       setSynth(null);
+    }
+  };
+
+  // Handle touch move to detect if the user moves out of the circle
+  const handleTouchMove = (e) => {
+    const touch = e.touches[0];
+    const circle = e.target.getBoundingClientRect();
+    const touchX = touch.clientX;
+    const touchY = touch.clientY;
+
+    // Check if the touch is outside the circle's bounding box
+    if (
+      touchX < circle.left ||
+      touchX > circle.right ||
+      touchY < circle.top ||
+      touchY > circle.bottom
+    ) {
+      stopSound(); // Stop the sound if touch moves out
     }
   };
 
@@ -39,23 +55,7 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
       onMouseLeave={stopSound}    // Stop sound when the cursor/finger leaves the circle
       onTouchStart={startSound}   // Start sound on touch start for mobile
       onTouchEnd={stopSound}      // Stop sound on touch end for mobile
-      onTouchMove={(e) => {       // Trigger sound when dragging over the circle on touch
-        const touch = e.touches[0];
-        const circle = e.target.getBoundingClientRect();
-        const touchX = touch.clientX;
-        const touchY = touch.clientY;
-
-        if (
-          touchX > circle.left &&
-          touchX < circle.right &&
-          touchY > circle.top &&
-          touchY < circle.bottom
-        ) {
-          startSound();
-        } else {
-          stopSound();
-        }
-      }}
+      onTouchMove={handleTouchMove} // Check for touch move outside the circle and stop sound
       style={{ cursor: 'pointer' }}
     />
   );
