@@ -24,7 +24,7 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
       cx={cx}
       cy={cy}
       r={r}
-      fill="blue"
+      fill="black"
       onMouseDown={startSound}   // Start sound on mouse down
       onMouseUp={stopSound}      // Stop sound on mouse up
       onMouseLeave={stopSound}   // Stop sound if the mouse leaves the circle while holding
