@@ -6,7 +6,10 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Function to start playing the sound
-  const startSound = () => {
+  const startSound = async () => {
+    // Ensure the AudioContext is resumed on mobile
+    await Tone.start();
+    
     if (!isPlaying) {
       const newSynth = new Tone.Synth().toDestination();
       newSynth.triggerAttack(pitch); // Start the sound
@@ -41,7 +44,7 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
         const circle = e.target.getBoundingClientRect();
         const touchX = touch.clientX;
         const touchY = touch.clientY;
-        
+
         if (
           touchX > circle.left &&
           touchX < circle.right &&
