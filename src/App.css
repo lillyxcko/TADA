@@ -1,9 +1,12 @@
-
-
 /* Disable scrolling */
 html, body {
-  overflow: hidden;
+  touch-action: manipulation; /* Disable zooming via double-tap */
+  margin: 0;
+  padding: 0;
+  width: 100%;
   height: 100%;
+  overflow: hidden;
+  user-select: none; /* Prevents text selection */
 }
 
 .app-container {
