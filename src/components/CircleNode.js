@@ -1,11 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 const CircleNode = ({ cx, cy, r, pitch }) => {
   const audioContextRef = useRef(null);
   const oscillatorRef = useRef(null);
   const isInsideRef = useRef(false); // Track if the touch is inside the circle
+  const circleRef = useRef(null);
 
-  // Function to create AudioContext if not already created
   const initializeAudioContext = () => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -34,10 +34,9 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
     }
   };
 
-  // Handle touch move (enter/leave behavior)
   const handleTouchMove = (e) => {
     const touch = e.touches[0];
-    const circle = e.target.getBoundingClientRect();
+    const circle = circleRef.current.getBoundingClientRect();
     const touchX = touch.clientX;
     const touchY = touch.clientY;
 
@@ -49,52 +48,74 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
       touchY < circle.bottom
     );
 
-    console.log(`Touch coordinates: X=${touchX}, Y=${touchY}`);
-    console.log(`Circle bounding box: Left=${circle.left}, Right=${circle.right}, Top=${circle.top}, Bottom=${circle.bottom}`);
-    console.log(`isInside: ${isInside}, isInsideRef.current: ${isInsideRef.current}`);
-
-    // If the touch enters the circle (from outside), start the sound
     if (isInside && !isInsideRef.current) {
       console.log('Touch entered the circle');
       startSound();
       isInsideRef.current = true;
-    } 
-    // If the touch leaves the circle, stop the sound
-    else if (!isInside && isInsideRef.current) {
+    } else if (!isInside && isInsideRef.current) {
       console.log('Touch left the circle');
       stopSound();
       isInsideRef.current = false;
     }
   };
 
-  // Handle touch start
   const handleTouchStart = (e) => {
-    startSound();
-    isInsideRef.current = true;
-    console.log('Touch started');
+    const touch = e.touches[0];
+    const circle = circleRef.current.getBoundingClientRect();
+    const touchX = touch.clientX;
+    const touchY = touch.clientY;
+
+    // Check if touch starts inside the circle
+    const isInside = (
+      touchX > circle.left &&
+      touchX < circle.right &&
+      touchY > circle.top &&
+      touchY < circle.bottom
+    );
+
+    if (isInside) {
+      console.log('Touch started in the circle');
+      startSound();
+      isInsideRef.current = true;
+    } else {
+      console.log('Touch started outside the circle');
+    }
   };
 
-  // Handle touch end
   const handleTouchEnd = () => {
     stopSound();
-    isInsideRef.current = false; // Reset state after touch ends
-    console.log('Touch ended');
+    isInsideRef.current = false;
+    console.log('Touch ended in the circle');
   };
+
+  useEffect(() => {
+    const handleDocumentTouchMove = (e) => {
+      handleTouchMove(e);
+    };
+
+    const handleDocumentTouchStart = (e) => {
+      handleTouchStart(e);
+    };
+
+    document.addEventListener('touchmove', handleDocumentTouchMove);
+    document.addEventListener('touchstart', handleDocumentTouchStart);
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('touchmove', handleDocumentTouchMove);
+      document.removeEventListener('touchstart', handleDocumentTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
 
   return (
     <circle
+      ref={circleRef}
       cx={cx}
       cy={cy}
       r={r}
       fill="white"
       fillOpacity={0.9}
-      onMouseDown={startSound}    // Start sound on mouse down
-      onMouseUp={stopSound}       // Stop sound on mouse up
-      onMouseEnter={startSound}   // Start sound when mouse enters the circle
-      onMouseLeave={stopSound}    // Stop sound when mouse leaves the circle
-      onTouchStart={handleTouchStart} // Log when touch starts
-      onTouchEnd={handleTouchEnd} // Stop sound on touch end for mobile
-      onTouchMove={handleTouchMove} // Start/stop sound when dragging over/away from the circle (enter/leave behavior)
       style={{ cursor: 'pointer' }}
     />
   );
