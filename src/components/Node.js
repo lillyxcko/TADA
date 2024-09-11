@@ -1,65 +1,11 @@
 import React, { useRef, useEffect } from 'react';
+import { SoundManager } from './SoundManager'; // Import the Sound Manager
 
-const CircleNode = ({ cx, cy, r, pitch }) => {
-  const audioContextRef = useRef(null);
-  const oscillatorRef = useRef(null);
+const Node = ({ cx, cy, r, pitch }) => {
   const isInsideRef = useRef(false); // Track if the touch is inside the circle
   const circleRef = useRef(null);
 
-  // Initialize AudioContext and resume if necessary
-  const initializeAudioContext = () => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume().catch(err => console.log('AudioContext resume failed', err));
-    }
-  };
-
-  // Start playing sound
-  const startSound = () => {
-    initializeAudioContext();
-    if (!oscillatorRef.current && audioContextRef.current) {
-      const osc = audioContextRef.current.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(pitch, audioContextRef.current.currentTime);
-      osc.connect(audioContextRef.current.destination);
-      osc.start();
-      oscillatorRef.current = osc;
-    }
-  };
-
-  // Stop playing sound
-  const stopSound = () => {
-    if (oscillatorRef.current) {
-      oscillatorRef.current.stop();
-      oscillatorRef.current = null;
-    }
-  };
-
-  // Handle when the user moves their finger, simulate entering and leaving the circle
-  const handleTouchMove = (e) => {
-    const touch = e.touches[0];
-    const circle = circleRef.current.getBoundingClientRect();
-    const touchX = touch.clientX;
-    const touchY = touch.clientY;
-
-    const isInside = (
-      touchX > circle.left &&
-      touchX < circle.right &&
-      touchY > circle.top &&
-      touchY < circle.bottom
-    );
-
-    if (isInside && !isInsideRef.current) {
-      startSound();
-      isInsideRef.current = true;
-    } else if (!isInside && isInsideRef.current) {
-      stopSound();
-      isInsideRef.current = false;
-    }
-  };
-
+  // Handle touch start and check if the touch is inside the circle
   const handleTouchStart = (e) => {
     const touch = e.touches[0];
     const circle = circleRef.current.getBoundingClientRect();
@@ -74,13 +20,37 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
     );
 
     if (isInside) {
-      startSound();
+      SoundManager.startNodeSound(pitch); // Use SoundManager to play node sound
       isInsideRef.current = true;
     }
   };
 
+  // Handle when the touch moves across the screen
+  const handleTouchMove = (e) => {
+    const touch = e.touches[0];
+    const circle = circleRef.current.getBoundingClientRect();
+    const touchX = touch.clientX;
+    const touchY = touch.clientY;
+
+    const isInside = (
+      touchX > circle.left &&
+      touchX < circle.right &&
+      touchY > circle.top &&
+      touchY < circle.bottom
+    );
+
+    if (isInside && !isInsideRef.current) {
+      SoundManager.startNodeSound(pitch); // Start sound when touch enters
+      isInsideRef.current = true;
+    } else if (!isInside && isInsideRef.current) {
+      SoundManager.stopNodeSound(); // Stop sound when touch leaves
+      isInsideRef.current = false;
+    }
+  };
+
+  // Stop the sound when touch ends
   const handleTouchEnd = () => {
-    stopSound();
+    SoundManager.stopNodeSound();
     isInsideRef.current = false;
   };
 
@@ -112,4 +82,4 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
   );
 };
 
-export default CircleNode;
+export default Node;
