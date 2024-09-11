@@ -17,11 +17,13 @@ const getDistance = (touch1, touch2) => {
 // GestureManager component to handle multi-touch gestures
 export const GestureManager = ({ cx, cy, nodeValue }) => {
   const firstTouchRef = useRef(null); // Store the first touch event for gesture tracking
+  const hasSpokenRef = useRef(false); // Track whether the TTS has been triggered for this second tap
 
   // Handle first touch
   const handleTouchStart = (e) => {
     if (e.touches.length === 1) {
       firstTouchRef.current = e.touches[0]; // Store the first touch
+      hasSpokenRef.current = false; // Reset TTS trigger flag when the first touch starts
     }
   };
 
@@ -31,12 +33,19 @@ export const GestureManager = ({ cx, cy, nodeValue }) => {
       const secondTouch = e.touches[1];
       const distance = getDistance(firstTouchRef.current, secondTouch);
 
-      // If the second tap is within 100px radius, trigger TTS
-      if (distance <= 100) {
+      // If the second tap is within 100px radius and TTS hasn't been triggered yet, trigger TTS
+      if (distance <= 100 && !hasSpokenRef.current) {
         speakValue(nodeValue); // Announce the value of the node
-        // Reset the flag so the user can trigger TTS again during the same first touch dwell
-        firstTouchRef.current = null;
+        hasSpokenRef.current = true; // Prevent repeated triggering until reset
       }
+    }
+  };
+
+  // Reset the flag after each TTS so that a new second tap can trigger TTS again
+  const handleTouchEnd = (e) => {
+    // If there's only one touch left, reset the spoken flag for the next second tap
+    if (e.touches.length === 1) {
+      hasSpokenRef.current = false; // Allow subsequent second taps to trigger TTS
     }
   };
 
@@ -47,5 +56,6 @@ export const GestureManager = ({ cx, cy, nodeValue }) => {
   return {
     handleTouchStart,
     handleTouchMove,
+    handleTouchEnd, // Expose handleTouchEnd to Node for resetting
   };
 };
