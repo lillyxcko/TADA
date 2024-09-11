@@ -17,11 +17,13 @@ const getDistance = (touch1, touch2) => {
 // GestureManager component to handle multi-touch gestures
 export const GestureManager = ({ cx, cy, nodeValue }) => {
   const firstTouchRef = useRef(null); // Store the first touch event for gesture tracking
+  const lastSecondTapRef = useRef(null); // Store the last second tap event to prevent repetition
 
   // Handle first touch (dwell)
   const handleTouchStart = (e) => {
     if (e.touches.length === 1) {
       firstTouchRef.current = e.touches[0]; // Store the first finger touch (dwell)
+      lastSecondTapRef.current = null; // Reset the second tap tracking
     }
   };
 
@@ -32,9 +34,10 @@ export const GestureManager = ({ cx, cy, nodeValue }) => {
       const secondTouch = e.touches[1];
       const distance = getDistance(firstTouchRef.current, secondTouch);
 
-      // Trigger TTS if the second tap is within 200px radius
-      if (distance <= 200) {
+      // Only trigger TTS if the second tap is different from the last second tap
+      if (distance <= 200 && lastSecondTapRef.current !== secondTouch.identifier) {
         speakValue(nodeValue); // Announce the value of the node
+        lastSecondTapRef.current = secondTouch.identifier; // Track the current second tap to prevent repetition
       }
     }
   };
@@ -43,8 +46,17 @@ export const GestureManager = ({ cx, cy, nodeValue }) => {
     handleSecondTouch(e); // Check for second tap during movement
   };
 
+  const handleTouchEnd = (e) => {
+    // Reset the state when the first finger is lifted
+    if (e.touches.length === 0 || e.touches.length === 1) {
+      firstTouchRef.current = null; // Clear the first touch
+      lastSecondTapRef.current = null; // Reset second tap tracking
+    }
+  };
+
   return {
     handleTouchStart,
     handleTouchMove,
+    handleTouchEnd,
   };
 };
