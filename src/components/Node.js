@@ -1,11 +1,17 @@
 import React, { useRef, useEffect } from 'react';
 import { SoundManager } from './SoundManager'; // Import the Sound Manager
+import { GestureManager } from './GestureManager'; // Import the Gesture Manager
 
-const Node = ({ cx, cy, r, pitch }) => {
+const Node = ({ cx, cy, r, pitch, value }) => {
   const isInsideRef = useRef(false); // Track if the touch is inside the circle
   const circleRef = useRef(null);
+  const { handleTouchStart: gestureTouchStart, handleTouchMove: gestureTouchMove } = GestureManager({
+    cx,
+    cy,
+    nodeValue: value,
+  });
 
-  // Handle touch start and check if the touch is inside the circle
+  // Handle basic touch start and check if the touch is inside the circle
   const handleTouchStart = (e) => {
     const touch = e.touches[0];
     const circle = circleRef.current.getBoundingClientRect();
@@ -23,9 +29,10 @@ const Node = ({ cx, cy, r, pitch }) => {
       SoundManager.startNodeSound(pitch); // Use SoundManager to play node sound
       isInsideRef.current = true;
     }
+    gestureTouchStart(e); // Call gesture manager to handle multi-touch gestures
   };
 
-  // Handle when the touch moves across the screen
+  // Handle touch move across the screen
   const handleTouchMove = (e) => {
     const touch = e.touches[0];
     const circle = circleRef.current.getBoundingClientRect();
@@ -46,6 +53,7 @@ const Node = ({ cx, cy, r, pitch }) => {
       SoundManager.stopNodeSound(); // Stop sound when touch leaves
       isInsideRef.current = false;
     }
+    gestureTouchMove(e); // Call gesture manager for multi-touch handling
   };
 
   // Stop the sound when touch ends
