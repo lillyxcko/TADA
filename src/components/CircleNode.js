@@ -6,6 +6,7 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
   const isInsideRef = useRef(false); // Track if the touch is inside the circle
   const circleRef = useRef(null);
 
+  // Initialize AudioContext and resume if necessary
   const initializeAudioContext = () => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -15,6 +16,7 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
     }
   };
 
+  // Start playing sound
   const startSound = () => {
     initializeAudioContext();
     if (!oscillatorRef.current && audioContextRef.current) {
@@ -27,6 +29,7 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
     }
   };
 
+  // Stop playing sound
   const stopSound = () => {
     if (oscillatorRef.current) {
       oscillatorRef.current.stop();
@@ -34,13 +37,13 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
     }
   };
 
+  // Handle when the user moves their finger, simulate entering and leaving the circle
   const handleTouchMove = (e) => {
     const touch = e.touches[0];
     const circle = circleRef.current.getBoundingClientRect();
     const touchX = touch.clientX;
     const touchY = touch.clientY;
 
-    // Check if touch is inside the circle
     const isInside = (
       touchX > circle.left &&
       touchX < circle.right &&
@@ -49,11 +52,9 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
     );
 
     if (isInside && !isInsideRef.current) {
-      console.log('Touch entered the circle');
       startSound();
       isInsideRef.current = true;
     } else if (!isInside && isInsideRef.current) {
-      console.log('Touch left the circle');
       stopSound();
       isInsideRef.current = false;
     }
@@ -65,7 +66,6 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
     const touchX = touch.clientX;
     const touchY = touch.clientY;
 
-    // Check if touch starts inside the circle
     const isInside = (
       touchX > circle.left &&
       touchX < circle.right &&
@@ -74,18 +74,14 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
     );
 
     if (isInside) {
-      console.log('Touch started in the circle');
       startSound();
       isInsideRef.current = true;
-    } else {
-      console.log('Touch started outside the circle');
     }
   };
 
   const handleTouchEnd = () => {
     stopSound();
     isInsideRef.current = false;
-    console.log('Touch ended in the circle');
   };
 
   useEffect(() => {
@@ -93,17 +89,11 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
       handleTouchMove(e);
     };
 
-    const handleDocumentTouchStart = (e) => {
-      handleTouchStart(e);
-    };
-
     document.addEventListener('touchmove', handleDocumentTouchMove);
-    document.addEventListener('touchstart', handleDocumentTouchStart);
     document.addEventListener('touchend', handleTouchEnd);
 
     return () => {
       document.removeEventListener('touchmove', handleDocumentTouchMove);
-      document.removeEventListener('touchstart', handleDocumentTouchStart);
       document.removeEventListener('touchend', handleTouchEnd);
     };
   }, []);
@@ -116,6 +106,7 @@ const CircleNode = ({ cx, cy, r, pitch }) => {
       r={r}
       fill="white"
       fillOpacity={0.9}
+      onTouchStart={handleTouchStart}
       style={{ cursor: 'pointer' }}
     />
   );
