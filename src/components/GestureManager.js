@@ -8,9 +8,9 @@ const speakValue = (text) => {
 };
 
 // Calculate the distance between two touch points
-const getDistance = (touch1, cx, cy) => {
-  const dx = touch1.clientX - cx;
-  const dy = touch1.clientY - cy;
+const getDistance = (touch1, touch2) => {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
   return Math.sqrt(dx * dx + dy * dy);
 };
 
@@ -18,15 +18,18 @@ const getDistance = (touch1, cx, cy) => {
 export const GestureManager = ({ cx, cy, nodeValue }) => {
   const firstTouchRef = useRef(null); // Store the first touch event for gesture tracking
 
+  // Handle first touch
   const handleTouchStart = (e) => {
-    const touch = e.touches[0];
-    firstTouchRef.current = touch; // Store the first touch
+    if (e.touches.length === 1) {
+      firstTouchRef.current = e.touches[0]; // Store the first touch
+    }
   };
 
+  // Handle second touch within a 100px radius of the node
   const handleSecondTouch = (e) => {
     if (e.touches.length === 2 && firstTouchRef.current) {
       const secondTouch = e.touches[1];
-      const distance = getDistance(secondTouch, cx, cy); // Distance from center of node
+      const distance = getDistance(firstTouchRef.current, secondTouch);
 
       // If the second tap is within 100px radius, trigger TTS
       if (distance <= 100) {

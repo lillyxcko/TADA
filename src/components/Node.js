@@ -11,7 +11,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
     nodeValue: value,
   });
 
-  // Handle basic touch start and check if the touch is inside the circle
+  // Handle touch start and check if the touch is inside the circle
   const handleTouchStart = (e) => {
     const touch = e.touches[0];
     const circle = circleRef.current.getBoundingClientRect();
@@ -29,7 +29,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       SoundManager.startNodeSound(pitch); // Use SoundManager to play node sound
       isInsideRef.current = true;
     }
-    gestureTouchStart(e); // Call gesture manager to handle multi-touch gestures
+    gestureTouchStart(e); // Pass to GestureManager
   };
 
   // Handle touch move across the screen
@@ -53,7 +53,8 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       SoundManager.stopNodeSound(); // Stop sound when touch leaves
       isInsideRef.current = false;
     }
-    gestureTouchMove(e); // Call gesture manager for multi-touch handling
+
+    gestureTouchMove(e); // Pass to GestureManager
   };
 
   // Stop the sound when touch ends
