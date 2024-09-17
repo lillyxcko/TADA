@@ -7,14 +7,14 @@ const Diagram = () => {
   const nodes = [
     { cx: 100, cy: 200, r: 50, pitch: 261.63, value: "cat" },
     { cx: 300, cy: 200, r: 50, pitch: 329.63, value: 576.5 },
-    { cx: 200, cy: 90, r: 50, pitch: 392.00, value: "dog" },
+    { cx: 200, cy: 100, r: 50, pitch: 392.00, value: "dog" },
   ];
 
   // Define the links (connect nodes by their indices in the nodes array)
   const links = [
-    { from: 0, to: 1 }, // Link between node 0 (cat) and node 1 (576.5)
-    { from: 1, to: 2 }, // Link between node 1 (576.5) and node 2 (dog)
-    { from: 0, to: 2 }, // Link between node 0 (cat) and node 2 (dog)
+    { from: 0, to: 1, pitch: 500 }, // Link between node 0 (cat) and node 1 (576.5)
+    { from: 1, to: 2, pitch: 500 }, // Link between node 1 (576.5) and node 2 (dog)
+    { from: 0, to: 2, pitch: 500 }, // Link between node 0 (cat) and node 2 (dog)
   ];
 
   return (
@@ -29,7 +29,7 @@ const Diagram = () => {
           y1={nodes[link.from].cy}
           x2={nodes[link.to].cx}
           y2={nodes[link.to].cy}
-          thickness={8} // You can adjust the thickness here
+          pitch={link.pitch} // Assign unique pitch to each link
         />
       ))}
 

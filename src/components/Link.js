@@ -1,65 +1,97 @@
-import React, { useEffect, useRef } from 'react';
-import { SoundManager } from './SoundManager'; // Import the Sound Manager
+import React, { useRef, useEffect } from 'react';
+import { SoundManager } from './SoundManager'; // Import SoundManager for link sounds
 
-// Helper function to check if a point (touchX, touchY) is near a line segment
-const isTouchNearLink = (x1, y1, x2, y2, touchX, touchY, threshold = 10) => {
-  const A = touchX - x1;
-  const B = touchY - y1;
-  const C = x2 - x1;
-  const D = y2 - y1;
-
-  const dot = A * C + B * D;
-  const len_sq = C * C + D * D;
-  const param = len_sq !== 0 ? dot / len_sq : -1;
-
-  let nearestX, nearestY;
-
-  if (param < 0) {
-    nearestX = x1;
-    nearestY = y1;
-  } else if (param > 1) {
-    nearestX = x2;
-    nearestY = y2;
-  } else {
-    nearestX = x1 + param * C;
-    nearestY = y1 + param * D;
-  }
-
-  const dx = touchX - nearestX;
-  const dy = touchY - nearestY;
-  return Math.sqrt(dx * dx + dy * dy) < threshold;
-};
-
-const Link = ({ x1, y1, x2, y2, thickness }) => {
+const Link = ({ x1, y1, x2, y2, pitch }) => {
+  const isTouchNearRef = useRef(false); // Track if the touch is near the link
   const linkRef = useRef(null);
 
+  // Helper function to calculate the angle between two points
+  const calculateAngle = (x1, y1, x2, y2) => {
+    return Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+  };
+
+  // Calculate the distance between two points (width of the rectangle)
+  const calculateDistance = (x1, y1, x2, y2) => {
+    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  };
+
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0];
+    const touchX = touch.clientX;
+    const touchY = touch.clientY;
+
+    const rect = linkRef.current.getBoundingClientRect();
+    const isInside = (
+      touchX >= rect.left &&
+      touchX <= rect.right &&
+      touchY >= rect.top &&
+      touchY <= rect.bottom
+    );
+
+    if (isInside) {
+      console.log("Touch near link detected, playing sound for link");
+      SoundManager.startLinkSound(pitch); // Play the sound for the link
+      isTouchNearRef.current = true;
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    const touch = e.touches[0];
+    const touchX = touch.clientX;
+    const touchY = touch.clientY;
+
+    const rect = linkRef.current.getBoundingClientRect();
+    const isInside = (
+      touchX >= rect.left &&
+      touchX <= rect.right &&
+      touchY >= rect.top &&
+      touchY <= rect.bottom
+    );
+
+    if (isInside && !isTouchNearRef.current) {
+      console.log("Touch moved near link, playing sound for link");
+      SoundManager.startLinkSound(pitch); // Start sound when touch moves near the link
+      isTouchNearRef.current = true;
+    } else if (!isInside && isTouchNearRef.current) {
+      console.log("Touch moved away from link, stopping sound for link");
+      SoundManager.stopLinkSound(); // Stop sound when touch moves away from the link
+      isTouchNearRef.current = false;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    SoundManager.stopLinkSound();
+    isTouchNearRef.current = false;
+  };
+
   useEffect(() => {
-    const handleTouchMove = (e) => {
-      const touch = e.touches[0];
-      const touchX = touch.clientX;
-      const touchY = touch.clientY;
-
-      if (isTouchNearLink(x1, y1, x2, y2, touchX, touchY, thickness + 10)) {
-        SoundManager.startLinkSound('C4'); // Play a pluck sound when the touch is near the link
-      }
+    const handleDocumentTouchMove = (e) => {
+      handleTouchMove(e);
     };
 
-    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchmove', handleDocumentTouchMove);
+    document.addEventListener('touchend', handleTouchEnd);
+
     return () => {
-      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchmove', handleDocumentTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [x1, y1, x2, y2, thickness]);
+  }, []);
 
+  // Calculate the properties of the rectangle
+  const width = calculateDistance(x1, y1, x2, y2);
+  const height = 10; // You can adjust this value for the thickness of the link
+  const angle = calculateAngle(x1, y1, x2, y2);
+  
   return (
-    <line
+    <rect
       ref={linkRef}
-      x1={x1}
-      y1={y1}
-      x2={x2}
-      y2={y2}
-      stroke="white"
-      fillOpacity={0.95}
-      strokeWidth={thickness}
+      x={x1}
+      y={y1 - height / 2} // Adjust y position to center the rectangle on the line
+      width={width}
+      height={height}
+      fill="white"
+      transform={`rotate(${angle} ${x1} ${y1})`} // Rotate to align with the line
     />
   );
 };

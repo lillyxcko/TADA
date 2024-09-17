@@ -1,61 +1,62 @@
-import * as Tone from 'tone';
-
 export const SoundManager = (() => {
-  let audioContext;
-  let oscillator;
-  let pluckSynth;
-
-  // Initialize AudioContext for the oscillator (used for node sounds)
-  const initializeAudioContext = () => {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
-  };
-
-  // Initialize the PluckSynth for link sounds (guitar pluck)
-  const initializePluckSynth = () => {
-    if (!pluckSynth) {
-      pluckSynth = new Tone.PluckSynth().toDestination();
-    }
-  };
-
-  // Start the sound for a node
-  const startNodeSound = (pitch) => {
-    initializeAudioContext();
-    if (!oscillator) {
-      oscillator = audioContext.createOscillator();
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(pitch, audioContext.currentTime);
-      oscillator.connect(audioContext.destination);
-      oscillator.start();
-    }
-  };
-
-  // Stop the sound for a node
-  const stopNodeSound = () => {
-    if (oscillator) {
-      oscillator.stop();
-      oscillator = null;
-    }
-  };
-
-  // Start the guitar pluck sound for a link
-  const startLinkSound = (pitch = 'C4') => {
-    initializePluckSynth(); // Ensure PluckSynth is initialized
-    pluckSynth.triggerAttack(pitch); // Play the pluck sound for the link
-  };
-
-  const stopLinkSound = () => {
-    // No explicit stop needed for PluckSynth, it decays naturally
-  };
-
-  return {
-    startNodeSound,
-    stopNodeSound,
-    startLinkSound,
-    stopLinkSound,
-  };
-})();
+    let audioContext;
+    let nodeOscillator;
+    let linkOscillator;
+  
+    // Initialize AudioContext for the oscillator (used for node sounds)
+    const initializeAudioContext = () => {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+    };
+  
+    // Start the sound for a node
+    const startNodeSound = (pitch) => {
+      initializeAudioContext();
+      if (!nodeOscillator) {
+        nodeOscillator = audioContext.createOscillator();
+        nodeOscillator.type = 'sine';
+        nodeOscillator.frequency.setValueAtTime(pitch, audioContext.currentTime);
+        nodeOscillator.connect(audioContext.destination);
+        nodeOscillator.start();
+      }
+    };
+  
+    // Stop the sound for a node
+    const stopNodeSound = () => {
+      if (nodeOscillator) {
+        nodeOscillator.stop();
+        nodeOscillator = null;
+      }
+    };
+  
+    // Start the sound for a link
+    const startLinkSound = (pitch) => {
+      initializeAudioContext();
+      if (!linkOscillator) {
+        linkOscillator = audioContext.createOscillator();
+        linkOscillator.type = 'triangle'; // Use a different waveform for the link sound
+        linkOscillator.frequency.setValueAtTime(pitch, audioContext.currentTime);
+        linkOscillator.connect(audioContext.destination);
+        linkOscillator.start();
+      }
+    };
+  
+    // Stop the sound for a link, ensuring the oscillator exists before trying to stop
+    const stopLinkSound = () => {
+      if (linkOscillator) {
+        linkOscillator.stop();
+        linkOscillator = null;
+      }
+    };
+  
+    return {
+      startNodeSound,
+      stopNodeSound,
+      startLinkSound,
+      stopLinkSound,
+    };
+  })();
