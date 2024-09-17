@@ -8,7 +8,7 @@ const Link = ({ x1, y1, x2, y2, thickness }) => {
       y1={y1}
       x2={x2}
       y2={y2}
-      stroke="black"
+      stroke="white"
       strokeWidth={8} 
     />
   );
