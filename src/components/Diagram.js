@@ -29,7 +29,7 @@ const Diagram = () => {
           y1={nodes[link.from].cy}
           x2={nodes[link.to].cx}
           y2={nodes[link.to].cy}
-          thickness={5} // You can adjust the thickness here
+          thickness={8} // You can adjust the thickness here
         />
       ))}
 
