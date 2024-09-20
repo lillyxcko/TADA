@@ -80,7 +80,7 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
 
   // Calculate the properties of the rectangle
   const width = calculateDistance(x1, y1, x2, y2);
-  const height = 10; // You can adjust this value for the thickness of the link
+  const height = 8; // You can adjust this value for the thickness of the link
   const angle = calculateAngle(x1, y1, x2, y2);
   
   return (
