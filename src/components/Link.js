@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 import { SoundManager } from './SoundManager'; // Import SoundManager for link sounds
 
-const Link = ({ x1, y1, x2, y2, pitch, blockLinkSound }) => {
+const Link = ({ x1, y1, x2, y2, pitch }) => {
   const lastTouchPositionRef = useRef(null); // Store the last touch position
-  const lastCrossDirectionRef = useRef(null); // Track the last crossing direction
+  const lastCrossDirectionRef = useRef(null); // Store the last crossing direction
   const linkRef = useRef(null);
 
   // Helper function to calculate the angle between two points
@@ -29,21 +29,28 @@ const Link = ({ x1, y1, x2, y2, pitch, blockLinkSound }) => {
       touchY <= rect.bottom
     );
 
-    // Check if the node is blocking link sound within the node's radius
-    if (!blockLinkSound() && isInside) {
+    if (isInside) {
       const lastTouchPosition = lastTouchPositionRef.current;
 
-      // Calculate the movement direction across the link (like a guitar pluck)
-      const movingLeftToRight = lastTouchPosition ? touchX > lastTouchPosition.x : false;
-      const movingRightToLeft = lastTouchPosition ? touchX < lastTouchPosition.x : false;
+      // If this is the first touch, initialize the last position
+      if (!lastTouchPosition) {
+        lastTouchPositionRef.current = { x: touchX, y: touchY };
+        return;
+      }
 
-      // Trigger link sound only when crossing the link in either direction
+      // Calculate the movement direction across the link (horizontal)
+      const movingLeftToRight = touchX > lastTouchPosition.x;
+      const movingRightToLeft = touchX < lastTouchPosition.x;
+
+      // Trigger sound when crossing the link in either direction
       if (movingLeftToRight && lastCrossDirectionRef.current !== "right") {
         SoundManager.startLinkSound(pitch); // Pluck when moving right
         lastCrossDirectionRef.current = "right";
+        console.log("Plucked right across the link");
       } else if (movingRightToLeft && lastCrossDirectionRef.current !== "left") {
         SoundManager.startLinkSound(pitch); // Pluck when moving left
         lastCrossDirectionRef.current = "left";
+        console.log("Plucked left across the link");
       }
 
       // Update the last touch position
@@ -71,14 +78,27 @@ const Link = ({ x1, y1, x2, y2, pitch, blockLinkSound }) => {
     };
   }, []);
 
-  // Calculate the properties of the rectangle (link) to display
+  // Calculate the properties of the rectangle
   const width = calculateDistance(x1, y1, x2, y2);
-  const height = 8; // Adjust this value for the thickness of the link
+  const height = 8; // Thickness of the link (can adjust this value for the touch-sensitive line)
   const angle = calculateAngle(x1, y1, x2, y2);
+
+  // Eliminate padding since you want the touch area to match the link's size
+  const touchPadding = 0; // Small padding for touch detection, but following the link's angle
 
   return (
     <>
-      {/* Transparent background for touch detection area */}
+      {/* Diagonal touch detection area */}
+      <rect
+        x={x1} // Set the start of the detection area at x1
+        y={y1 - touchPadding / 2} // Adjust y position to make sure the detection area centers on the link
+        width={width} // The length of the detection area matches the link's width
+        height={touchPadding} // Touch padding that extends above and below the link
+        fill="transparent"
+        transform={`rotate(${angle} ${x1} ${y1})`} // Rotate the rectangle to align with the link
+      />
+
+      {/* Render the actual link */}
       <rect
         ref={linkRef}
         x={x1}
