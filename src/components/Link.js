@@ -31,7 +31,7 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
 
     if (isInside) {
       const lastTouchPosition = lastTouchPositionRef.current;
-      
+
       // If this is the first touch, initialize the last position
       if (!lastTouchPosition) {
         lastTouchPositionRef.current = { x: touchX, y: touchY };
@@ -80,24 +80,23 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
 
   // Calculate the properties of the rectangle
   const width = calculateDistance(x1, y1, x2, y2);
-  const height = 8; // You can adjust this value for the thickness of the link
+  const height = 8; // Thickness of the link (can adjust this value for the touch-sensitive line)
   const angle = calculateAngle(x1, y1, x2, y2);
 
-  // Increase the touch-sensitive area by making the background area larger
-  const touchPadding = 20; // Extra padding around the link for more reliable detection
-  const expandedWidth = width + touchPadding; // Larger width for touch detection
-  const expandedHeight = height + touchPadding; // Larger height for touch detection
+  // Eliminate padding since you want the touch area to match the link's size
+  const touchPadding = 8; // Small padding for touch detection, but following the link's angle
 
   return (
     <>
-      {/* Transparent background for touch detection area */}
+      {/* Diagonal touch detection area */}
       <rect
-        x={x1 - touchPadding / 2} // Offset to center the expanded area
-        y={y1 - height / 2 - touchPadding / 2} // Center the expanded area on the link
-        width={expandedWidth}
-        height={expandedHeight}
-        fill="transparent" // Invisible touch area
-        transform={`rotate(${angle} ${x1} ${y1})`} // Rotate to align with the link
+        x={x1} // Set the start of the detection area at x1
+        y={y1 - touchPadding / 2} // Adjust y position to make sure the detection area centers on the link
+        width={width} // The length of the detection area matches the link's width
+        height={touchPadding} // Touch padding that extends above and below the link
+        fill="red" // Make it visible for testing
+        fillOpacity={0.3} // Optionally make it semi-transparent
+        transform={`rotate(${angle} ${x1} ${y1})`} // Rotate the rectangle to align with the link
       />
 
       {/* Render the actual link */}
