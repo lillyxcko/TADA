@@ -8,7 +8,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
   const { handleTouchStart: gestureTouchStart, handleTouchMove: gestureTouchMove, handleTouchEnd: gestureTouchEnd } = GestureManager({
     cx,
     cy,
-    nodeValue: value,
+    nodeValue: value, // Pass the value to announce via TTS
   });
 
   // Handle touch start and check if the touch is inside the circle
@@ -24,14 +24,14 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       touchY < circle.bottom
     );
 
-    // Check if it's a single touch and the touch is inside the circle
+    // Trigger the node sound only on a single touch
     if (e.touches.length === 1 && isInside) {
-      SoundManager.startNodeSound(pitch); // Use SoundManager to play node sound
+      SoundManager.startNodeSound(pitch); // Play node sound
       isInsideRef.current = true;
-    } else if (e.touches.length === 2) {
-      // When the second finger is involved, skip node sound and handle TTS
-      gestureTouchStart(e); // Pass to GestureManager for TTS without triggering node sound
     }
+
+    // Always handle the touch with GestureManager, especially for second tap TTS
+    gestureTouchStart(e); // Pass the event to GestureManager to handle multi-touch
   };
 
   // Handle touch move across the screen
@@ -47,7 +47,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       touchY < circle.bottom
     );
 
-    // Only trigger sound for the first touch
+    // Trigger the node sound only if inside and with a single touch
     if (e.touches.length === 1 && isInside && !isInsideRef.current) {
       SoundManager.startNodeSound(pitch); // Start sound when touch enters
       isInsideRef.current = true;
@@ -56,12 +56,12 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       isInsideRef.current = false;
     }
 
-    gestureTouchMove(e); // Pass to GestureManager
+    gestureTouchMove(e); // Pass to GestureManager to handle multi-touch logic
   };
 
   // Stop the sound when touch ends
   const handleTouchEnd = (e) => {
-    // Only stop the sound if no touches remain
+    // Stop node sound if no touches remain
     if (e.touches.length === 0) {
       SoundManager.stopNodeSound();
       isInsideRef.current = false;
