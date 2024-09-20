@@ -84,7 +84,7 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
   const angle = calculateAngle(x1, y1, x2, y2);
 
   // Eliminate padding since you want the touch area to match the link's size
-  const touchPadding = 8; // Small padding for touch detection, but following the link's angle
+  const touchPadding = 0; // Small padding for touch detection, but following the link's angle
 
   return (
     <>
@@ -94,8 +94,7 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
         y={y1 - touchPadding / 2} // Adjust y position to make sure the detection area centers on the link
         width={width} // The length of the detection area matches the link's width
         height={touchPadding} // Touch padding that extends above and below the link
-        fill="red" // Make it visible for testing
-        fillOpacity={0.3} // Optionally make it semi-transparent
+        fill="transparent"
         transform={`rotate(${angle} ${x1} ${y1})`} // Rotate the rectangle to align with the link
       />
 

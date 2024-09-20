@@ -5,7 +5,7 @@ import { GestureManager } from './GestureManager'; // Import the Gesture Manager
 const Node = ({ cx, cy, r, pitch, value }) => {
   const isInsideRef = useRef(false); // Track if the touch is inside the circle
   const circleRef = useRef(null);
-  const { handleTouchStart: gestureTouchStart, handleTouchMove: gestureTouchMove } = GestureManager({
+  const { handleTouchStart: gestureTouchStart, handleTouchMove: gestureTouchMove, handleTouchEnd: gestureTouchEnd } = GestureManager({
     cx,
     cy,
     nodeValue: value,
@@ -13,10 +13,9 @@ const Node = ({ cx, cy, r, pitch, value }) => {
 
   // Handle touch start and check if the touch is inside the circle
   const handleTouchStart = (e) => {
-    const touch = e.touches[0];
     const circle = circleRef.current.getBoundingClientRect();
-    const touchX = touch.clientX;
-    const touchY = touch.clientY;
+    const touchX = e.touches[0].clientX;
+    const touchY = e.touches[0].clientY;
 
     const isInside = (
       touchX > circle.left &&
@@ -25,20 +24,21 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       touchY < circle.bottom
     );
 
-    // Only play the sound for the first finger (single touch)
+    // Check if it's a single touch and the touch is inside the circle
     if (e.touches.length === 1 && isInside) {
       SoundManager.startNodeSound(pitch); // Use SoundManager to play node sound
       isInsideRef.current = true;
+    } else if (e.touches.length === 2) {
+      // When the second finger is involved, skip node sound and handle TTS
+      gestureTouchStart(e); // Pass to GestureManager for TTS without triggering node sound
     }
-    gestureTouchStart(e); // Pass to GestureManager (this handles the second finger for TTS)
   };
 
   // Handle touch move across the screen
   const handleTouchMove = (e) => {
-    const touch = e.touches[0];
+    const touchX = e.touches[0].clientX;
+    const touchY = e.touches[0].clientY;
     const circle = circleRef.current.getBoundingClientRect();
-    const touchX = touch.clientX;
-    const touchY = touch.clientY;
 
     const isInside = (
       touchX > circle.left &&
@@ -47,7 +47,8 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       touchY < circle.bottom
     );
 
-    if (isInside && !isInsideRef.current) {
+    // Only trigger sound for the first touch
+    if (e.touches.length === 1 && isInside && !isInsideRef.current) {
       SoundManager.startNodeSound(pitch); // Start sound when touch enters
       isInsideRef.current = true;
     } else if (!isInside && isInsideRef.current) {
@@ -59,9 +60,13 @@ const Node = ({ cx, cy, r, pitch, value }) => {
   };
 
   // Stop the sound when touch ends
-  const handleTouchEnd = () => {
-    SoundManager.stopNodeSound();
-    isInsideRef.current = false;
+  const handleTouchEnd = (e) => {
+    // Only stop the sound if no touches remain
+    if (e.touches.length === 0) {
+      SoundManager.stopNodeSound();
+      isInsideRef.current = false;
+    }
+    gestureTouchEnd(e); // Pass to GestureManager to handle multi-touch end logic
   };
 
   useEffect(() => {
