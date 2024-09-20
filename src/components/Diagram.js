@@ -5,9 +5,9 @@ import Link from './Link';
 const Diagram = () => {
   // Define the coordinates and properties of the nodes
   const nodes = [
-    { cx: 100, cy: 200, r: 50, pitch: 261.63, value: "cat" },
-    { cx: 300, cy: 200, r: 50, pitch: 329.63, value: 576.5 },
-    { cx: 200, cy: 100, r: 50, pitch: 392.00, value: "dog" },
+    { cx: 80, cy: 300, r: 40, pitch: 261.63, value: "cat" },
+    { cx: 300, cy: 250, r: 40, pitch: 329.63, value: 576.5 },
+    { cx: 220, cy: 80, r: 40, pitch: 392.00, value: "dog" },
   ];
 
   // Define the links (connect nodes by their indices in the nodes array)

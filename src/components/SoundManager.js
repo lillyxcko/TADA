@@ -1,62 +1,59 @@
+import * as Tone from 'tone';
+
 export const SoundManager = (() => {
-    let audioContext;
-    let nodeOscillator;
-    let linkOscillator;
-  
-    // Initialize AudioContext for the oscillator (used for node sounds)
-    const initializeAudioContext = () => {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-    };
-  
-    // Start the sound for a node
-    const startNodeSound = (pitch) => {
-      initializeAudioContext();
-      if (!nodeOscillator) {
-        nodeOscillator = audioContext.createOscillator();
-        nodeOscillator.type = 'sine';
-        nodeOscillator.frequency.setValueAtTime(pitch, audioContext.currentTime);
-        nodeOscillator.connect(audioContext.destination);
-        nodeOscillator.start();
-      }
-    };
-  
-    // Stop the sound for a node
-    const stopNodeSound = () => {
-      if (nodeOscillator) {
-        nodeOscillator.stop();
-        nodeOscillator = null;
-      }
-    };
-  
-    // Start the sound for a link
-    const startLinkSound = (pitch) => {
-      initializeAudioContext();
-      if (!linkOscillator) {
-        linkOscillator = audioContext.createOscillator();
-        linkOscillator.type = 'triangle'; // Use a different waveform for the link sound
-        linkOscillator.frequency.setValueAtTime(pitch, audioContext.currentTime);
-        linkOscillator.connect(audioContext.destination);
-        linkOscillator.start();
-      }
-    };
-  
-    // Stop the sound for a link, ensuring the oscillator exists before trying to stop
-    const stopLinkSound = () => {
-      if (linkOscillator) {
-        linkOscillator.stop();
-        linkOscillator = null;
-      }
-    };
-  
-    return {
-      startNodeSound,
-      stopNodeSound,
-      startLinkSound,
-      stopLinkSound,
-    };
-  })();
+  let trumpetSynths = [];
+  let pluckSynths = [];
+
+  // Initialize the trumpet/horn-like synth for node sounds
+  const initializeTrumpetSynth = () => {
+    const synth = new Tone.MonoSynth().toDestination();
+    trumpetSynths.push(synth);
+    if (Tone.context.state === 'suspended') {
+      Tone.context.resume();
+    }
+    return synth;
+  };
+
+  // Initialize the guitar pluck sound for link sounds
+  const initializePluckSynth = () => {
+    const synth = new Tone.PluckSynth().toDestination();
+    pluckSynths.push(synth);
+    if (Tone.context.state === 'suspended') {
+      Tone.context.resume();
+    }
+    return synth;
+  };
+
+  // Start the sound for a node (trumpet-like sound)
+  const startNodeSound = (pitch) => {
+    const synth = initializeTrumpetSynth();
+    Tone.start();
+    synth.triggerAttackRelease(pitch, '4n'); // Trigger trumpet sound on node touch
+  };
+
+  // Stop the sound for a node
+  const stopNodeSound = () => {
+    trumpetSynths.forEach(synth => synth.dispose()); // Dispose of the synths after use
+    trumpetSynths = []; // Clear the array for new synths
+  };
+
+  // Start the sound for a link (guitar pluck sound with sustained duration)
+  const startLinkSound = (pitch) => {
+    const synth = initializePluckSynth();
+    Tone.start();
+    synth.triggerAttackRelease(pitch, '8n'); // Trigger guitar pluck sound, but let it play for an eighth note
+  };
+
+  // Stop the sound for a link
+  const stopLinkSound = () => {
+    pluckSynths.forEach(synth => synth.dispose()); // Dispose of the synths after use
+    pluckSynths = []; // Clear the array for new synths
+  };
+
+  return {
+    startNodeSound,
+    stopNodeSound,
+    startLinkSound,
+    stopLinkSound,
+  };
+})();
