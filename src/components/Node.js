@@ -25,11 +25,12 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       touchY < circle.bottom
     );
 
-    if (isInside) {
+    // Only play the sound for the first finger (single touch)
+    if (e.touches.length === 1 && isInside) {
       SoundManager.startNodeSound(pitch); // Use SoundManager to play node sound
       isInsideRef.current = true;
     }
-    gestureTouchStart(e); // Pass to GestureManager
+    gestureTouchStart(e); // Pass to GestureManager (this handles the second finger for TTS)
   };
 
   // Handle touch move across the screen
