@@ -23,13 +23,11 @@ const Diagram = () => {
 
       {links.map((link, index) => (
         <Link
-          key={index}
-          x1={nodes[link.from].cx}
-          y1={nodes[link.from].cy}
-          x2={nodes[link.to].cx}
-          y2={nodes[link.to].cy}
-          pitch={link.pitch} 
-        />
+            key={index}
+            nodeA={nodes[link.from]} // Pass the entire node object for the start node
+            nodeB={nodes[link.to]}   // Pass the entire node object for the end node
+            pitch={link.pitch}        // Pass the pitch value
+      />
       ))}
 
       {nodes.map((node, index) => (
