@@ -6,7 +6,14 @@ export const SoundManager = (() => {
 
   // Initialize the trumpet/horn-like synth for node sounds
   const initializeTrumpetSynth = () => {
-    const synth = new Tone.MonoSynth().toDestination();
+    const synth = new Tone.MonoSynth({
+        envelope: {
+          attack: 0.1,  // Time for sound to reach full volume (can be adjusted)
+          decay: 0.2,   // Time for sound to transition from full volume to sustain level
+          sustain: 0.8, // Sustain level (can adjust to control the body of the sound)
+          release: 2,   // Release time (2 seconds for gradual stop)
+        }
+      }).toDestination();
     trumpetSynths.push(synth);
     if (Tone.context.state === 'suspended') {
       Tone.context.resume();
@@ -28,13 +35,16 @@ export const SoundManager = (() => {
   const startNodeSound = (pitch) => {
     const synth = initializeTrumpetSynth();
     Tone.start();
-    synth.triggerAttackRelease(pitch, '4n'); // Trigger trumpet sound on node touch
+    synth.triggerAttackRelease(pitch); // Trigger trumpet sound on node touch
   };
 
   // Stop the sound for a node
   const stopNodeSound = () => {
-    trumpetSynths.forEach(synth => synth.dispose()); // Dispose of the synths after use
-    trumpetSynths = []; // Clear the array for new synths
+    trumpetSynths.forEach(synth => synth.triggerRelease()); // Gradual release
+    setTimeout(() => {
+      trumpetSynths.forEach(synth => synth.dispose()); // Dispose of the synths after release
+      trumpetSynths = []; // Clear array for new synths
+    }, 3000); // Delay disposal to allow release to complete (matching the release time)
   };
 
   // Start the sound for a link (guitar pluck sound with sustained duration)
