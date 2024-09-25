@@ -21,7 +21,6 @@ const Diagram = () => {
     <svg width="100%" height="100%" viewBox="0 0 400 400">
       <rect width="100%" height="100%" fill="transparent" />
 
-      {/* Render the links */}
       {links.map((link, index) => (
         <Link
           key={index}
@@ -29,13 +28,19 @@ const Diagram = () => {
           y1={nodes[link.from].cy}
           x2={nodes[link.to].cx}
           y2={nodes[link.to].cy}
-          pitch={link.pitch} // Assign unique pitch to each link
+          pitch={link.pitch} 
         />
       ))}
 
-      {/* Render the nodes */}
       {nodes.map((node, index) => (
-        <Node key={index} cx={node.cx} cy={node.cy} r={node.r} pitch={node.pitch} value={node.value} />
+        <Node
+          key={index}
+          cx={node.cx}
+          cy={node.cy}
+          r={node.r}
+          pitch={node.pitch}
+          value={node.value}
+        />
       ))}
     </svg>
   );

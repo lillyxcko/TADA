@@ -5,20 +5,22 @@ export const SoundManager = (() => {
   let pluckSynths = [];
 
   // Initialize the trumpet/horn-like synth for node sounds
-  const initializeTrumpetSynth = () => {
-    const synth = new Tone.MonoSynth({
+  const initializeTrumpetSynth = (pitch) => {
+    if (!trumpetSynths[pitch]) {
+      const synth = new Tone.MonoSynth({
         envelope: {
-          attack: 0.1,  // Time for sound to reach full volume (can be adjusted)
+          attack: 0.1,  // Time for sound to reach full volume
           decay: 0.2,   // Time for sound to transition from full volume to sustain level
-          sustain: 0.8, // Sustain level (can adjust to control the body of the sound)
-          release: 2,   // Release time (2 seconds for gradual stop)
+          sustain: 0.8, // Sustain level (how loud the sound stays during the hold)
+          release: 2,   // Release time for gradual fade out
         }
       }).toDestination();
-    trumpetSynths.push(synth);
+      trumpetSynths[pitch] = synth;
+    }
     if (Tone.context.state === 'suspended') {
       Tone.context.resume();
     }
-    return synth;
+    return trumpetSynths[pitch];
   };
 
   // Initialize the guitar pluck sound for link sounds
@@ -33,20 +35,18 @@ export const SoundManager = (() => {
 
   // Start the sound for a node (trumpet-like sound)
   const startNodeSound = (pitch) => {
-    const synth = initializeTrumpetSynth();
+    const synth = initializeTrumpetSynth(pitch);
     Tone.start();
-    synth.triggerAttackRelease(pitch); // Trigger trumpet sound on node touch
+    synth.triggerAttack(pitch); // Sustain the sound while the touch persists
   };
 
-  // Stop the sound for a node
-  const stopNodeSound = () => {
-    trumpetSynths.forEach(synth => synth.triggerRelease()); // Gradual release
-    setTimeout(() => {
-      trumpetSynths.forEach(synth => synth.dispose()); // Dispose of the synths after release
-      trumpetSynths = []; // Clear array for new synths
-    }, 3000); // Delay disposal to allow release to complete (matching the release time)
+  // Stop the sound for a node (with gradual fade out)
+  const stopNodeSound = (pitch) => {
+    const synth = trumpetSynths[pitch];
+    if (synth) {
+      synth.triggerRelease(); // Gradual release of sound
+    }
   };
-
   // Start the sound for a link (guitar pluck sound with sustained duration)
   const startLinkSound = (pitch) => {
     const synth = initializePluckSynth();

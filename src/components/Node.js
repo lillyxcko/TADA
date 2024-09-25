@@ -6,6 +6,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
   const isInsideRef = useRef(false); // Track if the touch is inside the circle
   const circleRef = useRef(null);
   const [radius, setRadius] = useState(r); // Use state to handle the animated radius
+  const touchTimeoutRef = useRef(null); // Ref to handle debouncing
 
   const { handleTouchStart: gestureTouchStart, handleTouchMove: gestureTouchMove, handleTouchEnd: gestureTouchEnd } = GestureManager({
     cx,
@@ -13,79 +14,72 @@ const Node = ({ cx, cy, r, pitch, value }) => {
     nodeValue: value, // Pass the value to announce via TTS
   });
 
-  // Handle touch start and check if the touch is inside the circle
-  const handleTouchStart = (e) => {
+  const isInsideCircle = (touchX, touchY) => {
     const circle = circleRef.current.getBoundingClientRect();
-    const touchX = e.touches[0].clientX;
-    const touchY = e.touches[0].clientY;
-
-    const isInside = (
+    return (
       touchX > circle.left &&
       touchX < circle.right &&
       touchY > circle.top &&
       touchY < circle.bottom
     );
-
-    // Trigger the node sound only on a single touch
-    if (e.touches.length === 1 && isInside) {
-      SoundManager.startNodeSound(pitch); // Play node sound
-      isInsideRef.current = true;
-      setRadius(r + 10); // Increase radius by 10px when interacted with
-    }
-
-    // Always handle the touch with GestureManager, especially for second tap TTS
-    gestureTouchStart(e); // Pass the event to GestureManager to handle multi-touch
   };
 
-  // Handle touch move across the screen
+  // Handle touch start
+  const handleTouchStart = (e) => {
+    const touchX = e.touches[0].clientX;
+    const touchY = e.touches[0].clientY;
+
+    if (e.touches.length === 1 && isInsideCircle(touchX, touchY)) {
+      clearTimeout(touchTimeoutRef.current);
+      SoundManager.startNodeSound(pitch); // Play sound when touch starts
+      isInsideRef.current = true;
+      setRadius(r + 10); // Increase radius on touch
+    }
+    gestureTouchStart(e); // Pass the event to GestureManager
+  };
+
+  // Handle touch move
   const handleTouchMove = (e) => {
     const touchX = e.touches[0].clientX;
     const touchY = e.touches[0].clientY;
-    const circle = circleRef.current.getBoundingClientRect();
+    const isInside = isInsideCircle(touchX, touchY);
 
-    const isInside = (
-      touchX > circle.left &&
-      touchX < circle.right &&
-      touchY > circle.top &&
-      touchY < circle.bottom
-    );
-
-    // Trigger the node sound only if inside and with a single touch
     if (e.touches.length === 1 && isInside && !isInsideRef.current) {
       SoundManager.startNodeSound(pitch); // Start sound when touch enters
       isInsideRef.current = true;
-      setRadius(r + 10); // Increase radius when touch moves inside the node
+      setRadius(r + 10);
     } else if (!isInside && isInsideRef.current) {
-      SoundManager.stopNodeSound(); // Stop sound when touch leaves
+      SoundManager.stopNodeSound(pitch); // Stop sound when touch leaves
       isInsideRef.current = false;
-      setRadius(r); // Reset the radius when touch leaves the node
+      setRadius(r);
     }
 
-    gestureTouchMove(e); // Pass to GestureManager to handle multi-touch logic
+    gestureTouchMove(e); // Pass to GestureManager
   };
 
-  // Stop the sound when touch ends
+  // Handle touch end
   const handleTouchEnd = (e) => {
-    // Stop node sound if no touches remain
     if (e.touches.length === 0) {
-      SoundManager.stopNodeSound();
-      isInsideRef.current = false;
-      setRadius(r); // Reset the radius when touch ends
+      // Debounce touch end to avoid abrupt cutoffs
+      touchTimeoutRef.current = setTimeout(() => {
+        SoundManager.stopNodeSound(pitch); // Stop sound after all touches end
+        isInsideRef.current = false;
+        setRadius(r); // Reset radius
+      }, 100);
     }
-    gestureTouchEnd(e); // Pass to GestureManager to handle multi-touch end logic
+    gestureTouchEnd(e); // Pass to GestureManager
   };
 
   useEffect(() => {
-    const handleDocumentTouchMove = (e) => {
-      handleTouchMove(e);
-    };
+    const handleDocumentTouchMove = (e) => handleTouchMove(e);
+    const handleDocumentTouchEnd = (e) => handleTouchEnd(e);
 
     document.addEventListener('touchmove', handleDocumentTouchMove);
-    document.addEventListener('touchend', handleTouchEnd);
+    document.addEventListener('touchend', handleDocumentTouchEnd);
 
     return () => {
       document.removeEventListener('touchmove', handleDocumentTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('touchend', handleDocumentTouchEnd);
     };
   }, []);
 
@@ -94,11 +88,11 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       ref={circleRef}
       cx={cx}
       cy={cy}
-      r={radius} // Use the animated radius value
+      r={radius}
       fill="white"
       fillOpacity={0.9}
       onTouchStart={handleTouchStart}
-      style={{ cursor: 'pointer', transition: 'r 0.2s ease' }} // Smooth transition for radius change
+      style={{ cursor: 'pointer', transition: 'r 0.2s ease' }}
     />
   );
 };
