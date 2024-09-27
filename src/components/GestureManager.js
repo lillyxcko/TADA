@@ -47,7 +47,6 @@ export const GestureManager = ({ cx, cy, nodeValue }) => {
       lastSecondTapRef.current = null; // Allow new second taps to trigger TTS
     }
 
-    // comment
     // Reset everything if the first finger is lifted
     if (e.touches.length === 0) {
       firstTouchRef.current = null; // Reset first finger dwell
