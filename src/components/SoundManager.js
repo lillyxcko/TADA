@@ -11,7 +11,7 @@ export const SoundManager = (() => {
         envelope: {
           attack: 0.1,  // Time for sound to reach full volume
           decay: 0.2,   // Time for sound to transition from full volume to sustain level
-          sustain: 0.8, // Sustain level (how loud the sound stays during the hold)
+          sustain: 1, // Sustain level (how loud the sound stays during the hold)
           release: 2,   // Release time for gradual fade out
         }
       }).toDestination();
@@ -51,7 +51,7 @@ export const SoundManager = (() => {
   const startLinkSound = (pitch) => {
     const synth = initializePluckSynth();
     Tone.start();
-    synth.triggerAttackRelease(pitch, '8n'); // Trigger guitar pluck sound, but let it play for an eighth note
+    synth.triggerAttackRelease(pitch); // Trigger guitar pluck sound, but let it play for an eighth note
   };
 
   // Stop the sound for a link

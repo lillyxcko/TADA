@@ -31,33 +31,40 @@ const Link = ({ nodeA, nodeB, pitch }) => {
     const touch = e.touches[0];
     const touchX = touch.clientX;
     const touchY = touch.clientY;
-
+  
     const { startX, startY, endX, endY } = calculateLinkEnds();
-
-    // Check if the touch is inside the bounding rectangle of the link
-    const rect = linkRef.current.getBoundingClientRect();
+  
+    // Calculate link dimensions and position
+    const width = calculateDistance(startX, startY, endX, endY);
+    const height = 8; // Thickness of the link
+    const angle = calculateAngle(startX, startY, endX, endY);
+  
+    // Calculate link bounding rectangle
+    const centerX = (startX + endX) / 2;
+    const centerY = (startY + endY) / 2;
+  
+    // Calculate the bounding box
     const isInsideLink = (
-      touchX >= rect.left &&
-      touchX <= rect.right &&
-      touchY >= rect.top &&
-      touchY <= rect.bottom
+      touchX >= centerX - width / 2 &&
+      touchX <= centerX + width / 2 &&
+      touchY >= centerY - height / 2 &&
+      touchY <= centerY + height / 2
     );
-
-
+  
     // Proceed only if the touch is inside the link
     if (isInsideLink) {
       const lastTouchPosition = lastTouchPositionRef.current;
-
+  
       // If this is the first touch, initialize the last position
       if (!lastTouchPosition) {
         lastTouchPositionRef.current = { x: touchX, y: touchY };
         return;
       }
-
+  
       // Calculate the movement direction across the link (horizontal)
       const movingLeftToRight = touchX > lastTouchPosition.x;
       const movingRightToLeft = touchX < lastTouchPosition.x;
-
+  
       // Trigger sound when crossing the link in either direction
       if (movingLeftToRight && lastCrossDirectionRef.current !== "right") {
         SoundManager.startLinkSound(pitch); // Pluck when moving right
@@ -68,7 +75,7 @@ const Link = ({ nodeA, nodeB, pitch }) => {
         lastCrossDirectionRef.current = "left";
         console.log("Plucked left across the link");
       }
-
+  
       // Update the last touch position
       lastTouchPositionRef.current = { x: touchX, y: touchY };
     }
