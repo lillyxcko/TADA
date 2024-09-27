@@ -12,7 +12,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
     cx,
     cy,
     nodeValue: value, // Pass the value to announce via TTS
-    radius: r,
+    isInsideCircle,
   });
 
   const isInsideCircle = (touchX, touchY) => {
