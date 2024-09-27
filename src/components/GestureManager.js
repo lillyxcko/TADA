@@ -14,8 +14,15 @@ const getDistance = (touch1, touch2) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-// GestureManager component to handle multi-touch gestures
-export const GestureManager = ({ cx, cy, nodeValue }) => {
+// Function to check if a point is inside a circle
+const isPointInsideCircle = (pointX, pointY, centerX, centerY, radius) => {
+    const dx = pointX - centerX;
+    const dy = pointY - centerY;
+    return dx * dx + dy * dy <= radius * radius;
+  };
+  
+  // GestureManager component to handle multi-touch gestures
+  export const GestureManager = ({ nodes }) => {
     const firstTouchRef = useRef(null); // Store the first touch event (dwell)
     const lastSecondTapRef = useRef(null); // Store the last second tap identifier
   
@@ -30,7 +37,15 @@ export const GestureManager = ({ cx, cy, nodeValue }) => {
     // Update the first touch reference as the finger moves
     const handleTouchMove = (e) => {
       if (e.touches.length === 1) {
-        firstTouchRef.current = e.touches[0]; // Update the stored touch point
+        const touch = e.touches[0];
+        firstTouchRef.current = touch; // Update the stored touch point
+  
+        // Check if the first touch is inside any node
+        nodes.forEach((node) => {
+          if (isPointInsideCircle(touch.clientX, touch.clientY, node.cx, node.cy, node.r)) {
+            speakValue(node.value); // Announce the value of the corresponding node
+          }
+        });
       }
       handleSecondTouch(e); // Check for second tap during movement
     };
@@ -43,7 +58,11 @@ export const GestureManager = ({ cx, cy, nodeValue }) => {
   
         // Trigger TTS only if this is a new second tap
         if (distance <= 200 && lastSecondTapRef.current !== secondTouch.identifier) {
-          speakValue(nodeValue); // Announce the value of the node
+          nodes.forEach((node) => {
+            if (isPointInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY, node.cx, node.cy, node.r)) {
+              speakValue(node.value); // Announce the value of the corresponding node
+            }
+          });
           lastSecondTapRef.current = secondTouch.identifier; // Track the second tap
         }
       }
