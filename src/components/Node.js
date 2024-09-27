@@ -8,13 +8,6 @@ const Node = ({ cx, cy, r, pitch, value }) => {
   const [radius, setRadius] = useState(r); // Use state to handle the animated radius
   const touchTimeoutRef = useRef(null); // Ref to handle debouncing
 
-  const { handleTouchStart: gestureTouchStart, handleTouchMove: gestureTouchMove, handleTouchEnd: gestureTouchEnd } = GestureManager({
-    cx,
-    cy,
-    nodeValue: value, // Pass the value to announce via TTS
-    isInsideCircle,
-  });
-
   const isInsideCircle = (touchX, touchY) => {
     const circle = circleRef.current.getBoundingClientRect();
     return (
@@ -24,6 +17,14 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       touchY < circle.bottom
     );
   };
+
+  const { handleTouchStart: gestureTouchStart, handleTouchMove: gestureTouchMove, handleTouchEnd: gestureTouchEnd } = GestureManager({
+    cx,
+    cy,
+    nodeValue: value, // Pass the value to announce via TTS
+    isInsideCircle,
+  });
+
 
   // Handle touch start
   const handleTouchStart = (e) => {
