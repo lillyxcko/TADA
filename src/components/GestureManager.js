@@ -15,9 +15,17 @@ const getDistance = (touch1, touch2) => {
 };
 
 // GestureManager component to handle multi-touch gestures
-export const GestureManager = ({ cx, cy, nodeValue }) => {
+export const GestureManager = ({ cx, cy, nodeValue, radius }) => {
     const firstTouchRef = useRef(null); // Store the first touch event (dwell)
     const lastSecondTapRef = useRef(null); // Store the last second tap identifier
+  
+    // Function to check if the touch is inside the node
+    const isInsideNode = (touch) => {
+      const dx = touch.clientX - cx;
+      const dy = touch.clientY - cy;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance <= radius; // Check if the touch is within the radius
+    };
   
     // Handle first touch (dwell)
     const handleTouchStart = (e) => {
@@ -29,23 +37,11 @@ export const GestureManager = ({ cx, cy, nodeValue }) => {
   
     // Update the first touch reference as the finger moves
     const handleTouchMove = (e) => {
-        if (e.touches.length === 1) {
-          const touch = e.touches[0];
-          firstTouchRef.current = touch; // Update the stored touch point
-      
-          // Flag to track if a node value has been announced
-          let announced = false; 
-      
-          // Check if the first touch is inside any node
-          nodes.forEach((node) => {
-            if (isPointInsideCircle(touch.clientX, touch.clientY, node.cx, node.cy, node.r) && !announced) {
-              speakValue(node.value); // Announce the value of the corresponding node
-              announced = true; // Set flag to prevent further announcements
-            }
-          });
-        }
-        handleSecondTouch(e); // Check for second tap during movement
-      };
+      if (e.touches.length === 1) {
+        firstTouchRef.current = e.touches[0]; // Update the stored touch point
+      }
+      handleSecondTouch(e); // Check for second tap during movement
+    };
   
     // Handle second tap within a 200px radius of the node
     const handleSecondTouch = (e) => {
@@ -53,8 +49,8 @@ export const GestureManager = ({ cx, cy, nodeValue }) => {
         const secondTouch = e.touches[1];
         const distance = getDistance(firstTouchRef.current, secondTouch);
   
-        // Trigger TTS only if this is a new second tap
-        if (distance <= 200 && lastSecondTapRef.current !== secondTouch.identifier) {
+        // Trigger TTS only if this is a new second tap and the first touch is inside the node
+        if (isInsideNode(firstTouchRef.current) && distance <= 200 && lastSecondTapRef.current !== secondTouch.identifier) {
           speakValue(nodeValue); // Announce the value of the node
           lastSecondTapRef.current = secondTouch.identifier; // Track the second tap
         }
