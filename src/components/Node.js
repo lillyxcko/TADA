@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { SoundManager } from './SoundManager'; // Import the Sound Manager
 import { GestureManager } from './GestureManager'; // Import the Gesture Manager
 
@@ -25,9 +25,8 @@ const Node = ({ cx, cy, r, pitch, value }) => {
     isInsideCircle,
   });
 
-
   // Handle touch start
-  const handleTouchStart = (e) => {
+  const handleTouchStart = useCallback((e) => {
     const touchX = e.touches[0].clientX;
     const touchY = e.touches[0].clientY;
 
@@ -38,10 +37,10 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       setRadius(r + 10); // Increase radius on touch
     }
     gestureTouchStart(e); // Pass the event to GestureManager
-  };
+  }, [gestureTouchStart, pitch, r]); // Add dependencies
 
   // Handle touch move
-  const handleTouchMove = (e) => {
+  const handleTouchMove = useCallback((e) => {
     const touchX = e.touches[0].clientX;
     const touchY = e.touches[0].clientY;
     const isInside = isInsideCircle(touchX, touchY);
@@ -57,10 +56,10 @@ const Node = ({ cx, cy, r, pitch, value }) => {
     }
 
     gestureTouchMove(e); // Pass to GestureManager
-  };
+  }, [gestureTouchMove, pitch, r]); // Add dependencies
 
   // Handle touch end
-  const handleTouchEnd = (e) => {
+  const handleTouchEnd = useCallback((e) => {
     if (e.touches.length === 0) {
       // Debounce touch end to avoid abrupt cutoffs
       touchTimeoutRef.current = setTimeout(() => {
@@ -70,7 +69,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       }, 100);
     }
     gestureTouchEnd(e); // Pass to GestureManager
-  };
+  }, [gestureTouchEnd, pitch, r]); // Add dependencies
 
   useEffect(() => {
     const handleDocumentTouchMove = (e) => handleTouchMove(e);
@@ -83,7 +82,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       document.removeEventListener('touchmove', handleDocumentTouchMove);
       document.removeEventListener('touchend', handleDocumentTouchEnd);
     };
-  }, []);
+  }, [handleTouchMove, handleTouchEnd]); // Include the dependencies here
 
   return (
     <circle

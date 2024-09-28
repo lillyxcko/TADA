@@ -17,6 +17,12 @@ const Diagram = () => {
     { from: 0, to: 2, pitch: 500 }, // Link between node 0 (cat) and node 2 (dog)
   ];
 
+  // Log to check link connections
+  console.log('Link Connections:');
+  links.forEach((link, index) => {
+    console.log(`Link ${index}: from node ${link.from} to node ${link.to}`);
+  });
+
   return (
     <svg width="100%" height="100%" viewBox="0 0 400 400">
       <rect width="100%" height="100%" fill="transparent" />

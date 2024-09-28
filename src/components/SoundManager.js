@@ -3,16 +3,19 @@ import * as Tone from 'tone';
 export const SoundManager = (() => {
   let trumpetSynths = [];
   let pluckSynths = [];
+  let pluckGain = new Tone.Gain(0.5).toDestination(); // Set the gain for smoother sound
+  let lastPluckTime = 0; // Track the last time a pluck sound was played
+  const pluckMinInterval = 150; // Minimum interval between pluck sounds (in milliseconds)
 
-  // Initialize the trumpet/horn-like synth for node sounds
+  // Initialize the trumpet synth for node sounds
   const initializeTrumpetSynth = (pitch) => {
     if (!trumpetSynths[pitch]) {
       const synth = new Tone.MonoSynth({
         envelope: {
-          attack: 0.1,  // Time for sound to reach full volume
-          decay: 0.2,   // Time for sound to transition from full volume to sustain level
-          sustain: 1, // Sustain level (how loud the sound stays during the hold)
-          release: 2,   // Release time for gradual fade out
+          attack: 0.1,
+          decay: 0.2,
+          sustain: 1,
+          release: 2,
         }
       }).toDestination();
       trumpetSynths[pitch] = synth;
@@ -25,7 +28,7 @@ export const SoundManager = (() => {
 
   // Initialize the guitar pluck sound for link sounds
   const initializePluckSynth = () => {
-    const synth = new Tone.PluckSynth().toDestination();
+    const synth = new Tone.PluckSynth().connect(pluckGain); // Connect pluck synth to gain
     pluckSynths.push(synth);
     if (Tone.context.state === 'suspended') {
       Tone.context.resume();
@@ -47,17 +50,24 @@ export const SoundManager = (() => {
       synth.triggerRelease(); // Gradual release of sound
     }
   };
-  // Start the sound for a link (guitar pluck sound with sustained duration)
-  const startLinkSound = (pitch) => {
-    const synth = initializePluckSynth();
-    Tone.start();
-    synth.triggerAttackRelease(pitch); // Trigger guitar pluck sound, but let it play for an eighth note
-  };
 
+  // Start the sound for a link (guitar pluck sound with controlled timing)
+  const startLinkSound = (pitch) => {
+    const currentTime = Tone.now() * 1000; // Get current time in milliseconds
+
+    if (currentTime - lastPluckTime >= pluckMinInterval) { // Check interval
+      const synth = initializePluckSynth();
+      Tone.start();
+      synth.triggerAttackRelease(pitch, "8n"); // Trigger pluck sound
+      lastPluckTime = currentTime; // Update last pluck time
+    }
+  };
   // Stop the sound for a link
-  const stopLinkSound = () => {
-    pluckSynths.forEach(synth => synth.dispose()); // Dispose of the synths after use
-    pluckSynths = []; // Clear the array for new synths
+  const stopLinkSound = (pitch) => {
+    const synth = pluckSynths[pitch];
+    if (synth) {
+      synth.triggerRelease(); // Gradual release of sound
+    }
   };
 
   return {
