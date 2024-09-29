@@ -3,7 +3,7 @@ import * as Tone from 'tone';
 export const SoundManager = (() => {
   let trumpetSynths = [];
   let pluckSynths = [];
-  let pluckGain = new Tone.Gain(0.5).toDestination(); // Set the gain for smoother sound
+  let pluckGain = new Tone.Gain(3.5).toDestination(); // Set the gain for smoother sound
   let lastPluckTime = 0; // Track the last time a pluck sound was played
   const pluckMinInterval = 150; // Minimum interval between pluck sounds (in milliseconds)
 
