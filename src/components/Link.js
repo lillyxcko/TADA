@@ -4,6 +4,7 @@ import { SoundManager } from './SoundManager'; // Import SoundManager for link s
 const Link = ({ nodeA, nodeB, pitch }) => {
   const isInsideRef = useRef(false); // Track if the touch is inside the link
   const lastTouchPositionRef = useRef(null); // Store the last touch position for swiping
+  const soundPlayedRef = useRef(false); // Flag to track if sound has been played
 
   // Function to calculate the distance between two points
   const calculateDistance = (x1, y1, x2, y2) => {
@@ -70,12 +71,13 @@ const Link = ({ nodeA, nodeB, pitch }) => {
     const touch = e.touches[0];
     const { x: touchX, y: touchY } = convertToSVGCoords(touch.clientX, touch.clientY);
 
-    const boundingBox = createBoundingBox(startX, startY, endX, endY, 20); // Thickness for touch detection
+    const boundingBox = createBoundingBox(startX, startY, endX, endY, 5); // Thickness for touch detection
 
     if (touchX >= boundingBox.x && touchX <= boundingBox.x + boundingBox.width &&
         touchY >= boundingBox.y && touchY <= boundingBox.y + boundingBox.height) {
       isInsideRef.current = true; // Mark as inside the link
       lastTouchPositionRef.current = { x: touchX, y: touchY }; // Set the last touch position
+      soundPlayedRef.current = false; // Reset sound played flag
       SoundManager.startLinkSound(pitch); // Start sound when touch enters
     }
   }, [calculateLinkEnds, pitch]);
@@ -103,7 +105,11 @@ const Link = ({ nodeA, nodeB, pitch }) => {
 
         if (interpolatedX >= boundingBox.x && interpolatedX <= boundingBox.x + boundingBox.width &&
             interpolatedY >= boundingBox.y && interpolatedY <= boundingBox.y + boundingBox.height) {
-          SoundManager.startLinkSound(pitch); // Play sound if the interpolated point crosses the bounding box
+          // Play sound only if it hasn't been played during this touch movement
+          if (!soundPlayedRef.current) {
+            SoundManager.startLinkSound(pitch); // Play sound if the interpolated point crosses the bounding box
+            soundPlayedRef.current = true; // Set flag to true after sound is played
+          }
           break; // Stop further checks since we've detected an intersection
         }
       }
@@ -116,6 +122,7 @@ const Link = ({ nodeA, nodeB, pitch }) => {
   const handleTouchEnd = useCallback(() => {
     isInsideRef.current = false; // Mark as outside the link
     lastTouchPositionRef.current = null; // Reset last touch position
+    soundPlayedRef.current = false; // Reset sound played flag
   }, []);
 
   useEffect(() => {
