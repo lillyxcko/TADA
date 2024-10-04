@@ -8,15 +8,15 @@ const Node = ({ cx, cy, r, pitch, value }) => {
   const [radius, setRadius] = useState(r); // Use state to handle the animated radius
   const touchTimeoutRef = useRef(null); // Ref to handle debouncing
 
-  const isInsideCircle = (touchX, touchY) => {
+  const isInsideCircle = useCallback((touchX, touchY) => {
     const circle = circleRef.current.getBoundingClientRect();
-    return (
-      touchX > circle.left &&
-      touchX < circle.right &&
-      touchY > circle.top &&
-      touchY < circle.bottom
-    );
-  };
+    const centerX = circle.left + circle.width / 2; // Center x-coordinate of the circle
+    const centerY = circle.top + circle.height / 2; // Center y-coordinate of the circle
+    const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
+
+    const effectiveRadius = r + 60; 
+    return distanceSquared < (effectiveRadius ** 2); 
+  }, [r]); 
 
   const { handleTouchStart: gestureTouchStart, handleTouchMove: gestureTouchMove, handleTouchEnd: gestureTouchEnd } = GestureManager({
     cx,
@@ -37,7 +37,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       setRadius(r + 10); // Increase radius on touch
     }
     gestureTouchStart(e); // Pass the event to GestureManager
-  }, [gestureTouchStart, pitch, r]); // Add dependencies
+  }, [gestureTouchStart, pitch, r, isInsideCircle]); // Add dependencies
 
   // Handle touch move
   const handleTouchMove = useCallback((e) => {
@@ -56,7 +56,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
     }
 
     gestureTouchMove(e); // Pass to GestureManager
-  }, [gestureTouchMove, pitch, r]); // Add dependencies
+  }, [gestureTouchMove, pitch, r, isInsideCircle]); // Add dependencies
 
   // Handle touch end
   const handleTouchEnd = useCallback((e) => {
@@ -93,7 +93,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       fill="white"
       fillOpacity={1}
       onTouchStart={handleTouchStart}
-      style={{ cursor: 'pointer', transition: 'r 0.2s ease' }}
+      style={{ cursor: 'pointer', transition: 'r 0.2s ease', touchAction: 'none' }}
     />
   );
 };
