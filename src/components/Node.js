@@ -91,7 +91,7 @@ const Node = ({ cx, cy, r, pitch, value }) => {
       cy={cy}
       r={radius}
       fill="white"
-      fillOpacity={1}
+      fillOpacity={0.9}
       onTouchStart={handleTouchStart}
       style={{ cursor: 'pointer', transition: 'r 0.2s ease', touchAction: 'none' }}
     />

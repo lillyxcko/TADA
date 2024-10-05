@@ -1,164 +1,97 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import { SoundManager } from './SoundManager'; // Import SoundManager for link sounds
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { SoundManager } from './SoundManager'; // Import the Sound Manager
 
-const Link = ({ nodeA, nodeB, pitch }) => {
-  const isInsideRef = useRef(false); // Track if the touch is inside the link
-  const lastTouchPositionRef = useRef(null); // Store the last touch position for swiping
-  const soundPlayedRef = useRef(false); // Flag to track if sound has been played
+const Link = ({ x1, y1, x2, y2, pitch }) => {
+  const lineRef = useRef(null); // Ref for the rectangle
+  const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2); // Length of the link
+  const angle = Math.atan2(y2 - y1, x2 - x1); // Angle in radians
+  const linkHeight = 5; // Set a constant height for the link
 
-  // Function to calculate the distance between two points
-  const calculateDistance = (x1, y1, x2, y2) => {
-    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-  };
+  // Calculate the position to place the rectangle
+  const rectX = x1;
+  const rectY = y1;
 
-  // Calculate the link's start and end coordinates
-  const calculateLinkEnds = useCallback(() => {
-    if (!nodeA || !nodeB || isNaN(nodeA.cx) || isNaN(nodeA.cy) || isNaN(nodeA.r) ||
-        isNaN(nodeB.cx) || isNaN(nodeB.cy) || isNaN(nodeB.r)) {
-      console.error('Invalid nodeA or nodeB properties', { nodeA, nodeB });
-      return { startX: 0, startY: 0, endX: 0, endY: 0 };
-    }
+  // Check if the touch is inside the link
+  const isInsideLink = useCallback((touchX, touchY) => {
+    if (!lineRef.current) return false;
 
-    const dx = nodeB.cx - nodeA.cx;
-    const dy = nodeB.cy - nodeA.cy;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    // Get the bounding rectangle of the transformed link
+    const rect = lineRef.current.getBoundingClientRect();
 
-    if (distance === 0 || isNaN(distance)) {
-      console.error('Invalid distance between nodes', { nodeA, nodeB });
-      return { startX: 0, startY: 0, endX: 0, endY: 0 };
-    }
+    // Calculate the center of the link
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
 
-    const unitVectorX = dx / distance;
-    const unitVectorY = dy / distance;
+    // Translate the touch coordinates to the link's local space
+    const translatedX = (touchX - centerX) * Math.cos(-angle) - (touchY - centerY) * Math.sin(-angle);
+    const translatedY = (touchX - centerX) * Math.sin(-angle) + (touchY - centerY) * Math.cos(-angle);
 
-    const startX = nodeA.cx + unitVectorX * nodeA.r;
-    const startY = nodeA.cy + unitVectorY * nodeA.r;
-    const endX = nodeB.cx - unitVectorX * nodeB.r;
-    const endY = nodeB.cy - unitVectorY * nodeB.r;
+    // Check if the touch coordinates are within the bounds of the rectangle considering its height
+    return (
+      translatedX >= 0 &&
+      translatedX <= length &&
+      Math.abs(translatedY) <= linkHeight 
+    );
+  }, [length, linkHeight, angle]);
 
-    return { startX, startY, endX, endY };
-  }, [nodeA, nodeB]);
-
-  const convertToSVGCoords = (clientX, clientY) => {
-    const svgElement = document.querySelector('svg');
-    const pt = svgElement.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
-    const svgPoint = pt.matrixTransform(svgElement.getScreenCTM().inverse());
-    return { x: svgPoint.x, y: svgPoint.y };
-  };
-
-  // Create a bounding box for the link
-  const createBoundingBox = (startX, startY, endX, endY, thickness) => {
-    const centerX = (startX + endX) / 2;
-    const centerY = (startY + endY) / 2;
-    const width = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2) + thickness; // Add some buffer for touch detection
-    const height = thickness;
-
-    const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
-
-    return {
-      x: centerX - width / 2,
-      y: centerY - height / 2,
-      width,
-      height,
-      angle,
-    };
-  };
-
+  // Handle touch start
   const handleTouchStart = useCallback((e) => {
-    const { startX, startY, endX, endY } = calculateLinkEnds();
-    const touch = e.touches[0];
-    const { x: touchX, y: touchY } = convertToSVGCoords(touch.clientX, touch.clientY);
-
-    const boundingBox = createBoundingBox(startX, startY, endX, endY, 5); // Thickness for touch detection
-
-    if (touchX >= boundingBox.x && touchX <= boundingBox.x + boundingBox.width &&
-        touchY >= boundingBox.y && touchY <= boundingBox.y + boundingBox.height) {
-      isInsideRef.current = true; // Mark as inside the link
-      lastTouchPositionRef.current = { x: touchX, y: touchY }; // Set the last touch position
-      soundPlayedRef.current = false; // Reset sound played flag
-      SoundManager.startLinkSound(pitch); // Start sound when touch enters
+    const touchX = e.touches[0].clientX;
+    const touchY = e.touches[0].clientY;
+    console.log("handletouch");
+    if (isInsideLink(touchX, touchY)) {
+      console.log("Touch is inside the link");
+      SoundManager.startLinkSound(pitch); // Play sound when touch starts
     }
-  }, [calculateLinkEnds, pitch]);
+  }, [pitch, isInsideLink]);
 
-  const handleTouchMove = useCallback((e) => {
-    const { startX, startY, endX, endY } = calculateLinkEnds();
-    const touch = e.touches[0];
-    const { x: touchX, y: touchY } = convertToSVGCoords(touch.clientX, touch.clientY);
-
-    // Record the path of the touch
-    if (lastTouchPositionRef.current) {
-      const lastTouchX = lastTouchPositionRef.current.x;
-      const lastTouchY = lastTouchPositionRef.current.y;
-
-      // Check if the current touch position intersects with the link bounding box
-      const boundingBox = createBoundingBox(startX, startY, endX, endY, 20);
-
-      // Interpolating between last touch and current touch
-      const interpolationSteps = Math.ceil(calculateDistance(lastTouchX, lastTouchY, touchX, touchY) / 5); // Interpolating every 5 units
-
-      for (let i = 1; i <= interpolationSteps; i++) {
-        const t = i / interpolationSteps;
-        const interpolatedX = lastTouchX + t * (touchX - lastTouchX);
-        const interpolatedY = lastTouchY + t * (touchY - lastTouchY);
-
-        if (interpolatedX >= boundingBox.x && interpolatedX <= boundingBox.x + boundingBox.width &&
-            interpolatedY >= boundingBox.y && interpolatedY <= boundingBox.y + boundingBox.height) {
-          // Play sound only if it hasn't been played during this touch movement
-          if (!soundPlayedRef.current) {
-            SoundManager.startLinkSound(pitch); // Play sound if the interpolated point crosses the bounding box
-            soundPlayedRef.current = true; // Set flag to true after sound is played
-          }
-          break; // Stop further checks since we've detected an intersection
-        }
-      }
-    }
-
-    // Finally, update last touch position to the current one
-    lastTouchPositionRef.current = { x: touchX, y: touchY };
-  }, [calculateLinkEnds, pitch]);
-
+  // Handle touch end
   const handleTouchEnd = useCallback(() => {
-    isInsideRef.current = false; // Mark as outside the link
-    lastTouchPositionRef.current = null; // Reset last touch position
-    soundPlayedRef.current = false; // Reset sound played flag
-  }, []);
+    SoundManager.stopLinkSound(pitch); // Stop sound after touch ends
+  }, [pitch]);
+
+  // Handle touch move
+  const handleTouchMove = useCallback((e) => {
+    const touchX = e.touches[0].clientX;
+    const touchY = e.touches[0].clientY;
+    console.log("handlemove");
+
+    const isInside = isInsideLink(touchX, touchY);
+
+    if (isInside) {
+      console.log('Touch is inside the link');
+      SoundManager.startLinkSound(pitch); 
+    } else {
+      SoundManager.stopLinkSound(pitch);
+    }
+  }, [isInsideLink, pitch]);
 
   useEffect(() => {
-    const handleDocumentTouchMove = (e) => handleTouchMove(e);
     const handleDocumentTouchEnd = (e) => handleTouchEnd(e);
+    const handleDocumentTouchMove = (e) => handleTouchMove(e);
 
-    document.addEventListener('touchstart', handleTouchStart);
-    document.addEventListener('touchmove', handleDocumentTouchMove);
     document.addEventListener('touchend', handleDocumentTouchEnd);
+    document.addEventListener('touchmove', handleDocumentTouchMove);
 
     return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchmove', handleDocumentTouchMove);
       document.removeEventListener('touchend', handleDocumentTouchEnd);
+      document.removeEventListener('touchmove', handleDocumentTouchMove);
     };
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [handleTouchEnd, handleTouchMove]); // Include dependencies here
 
-  // Calculate link visual properties
-  const { startX, startY, endX, endY } = calculateLinkEnds();
-  const width = !isNaN(startX) && !isNaN(endX) ? calculateDistance(startX, startY, endX, endY) : 0;
-  const height = 8; // Width of the visual link
-  const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
-  
   return (
-    <>
-      {/* Render the actual link */}
-      <rect
-        x={startX}
-        y={startY - height / 2} // Adjust y position to center the rectangle on the line
-        width={width}
-        height={height}
-        fill="white"
-        fillOpacity={0.9}
-        transform={`rotate(${angle} ${startX} ${startY})`} // Rotate to align with the line
-      />
-    </>
+    <rect
+      ref={lineRef}
+      x={rectX}
+      y={rectY}
+      width={length}
+      height={linkHeight}
+      fill="white"
+      transform={`rotate(${angle * (180 / Math.PI)}, ${x1}, ${y1})`} // Rotate around the start point
+      onTouchStart={handleTouchStart} // Handle touch start
+      onTouchEnd={handleTouchEnd} // Handle touch end
+      style={{ cursor: 'pointer', transition: 'width 0.2s ease', touchAction: 'none' }} // Add transition effects
+    />
   );
 };
 
