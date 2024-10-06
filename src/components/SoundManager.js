@@ -4,8 +4,6 @@ export const SoundManager = (() => {
   let trumpetSynths = [];
   let pluckSynths = [];
   let pluckGain = new Tone.Gain(3.5).toDestination(); // Set the gain for smoother sound
-  let lastPluckTime = 0; // Track the last time a pluck sound was played
-  const pluckMinInterval = 150; // Minimum interval between pluck sounds (in milliseconds)
 
   // Initialize the trumpet synth for node sounds
   const initializeTrumpetSynth = (pitch) => {
@@ -53,15 +51,11 @@ export const SoundManager = (() => {
 
   // Start the sound for a link (guitar pluck sound with controlled timing)
   const startLinkSound = (pitch) => {
-    const currentTime = Tone.now() * 1000; // Get current time in milliseconds
-
-    if (currentTime - lastPluckTime >= pluckMinInterval) { // Check interval
-      const synth = initializePluckSynth();
-      Tone.start();
-      synth.triggerAttackRelease(pitch, "8n"); // Trigger pluck sound
-      lastPluckTime = currentTime; // Update last pluck time
-    }
+    const synth = initializePluckSynth();
+    Tone.start();
+    synth.triggerAttackRelease(pitch, "8n"); // Trigger pluck sound
   };
+
   // Stop the sound for a link
   const stopLinkSound = (pitch) => {
     const synth = pluckSynths[pitch];

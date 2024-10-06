@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { SoundManager } from './SoundManager'; // Import the Sound Manager
 
 const Link = ({ x1, y1, x2, y2, pitch }) => {
+  const isInsideRef = useRef(false); // Track if the touch is inside the circle
   const lineRef = useRef(null); // Ref for the rectangle
   const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2); // Length of the link
   const angle = Math.atan2(y2 - y1, x2 - x1); // Angle in radians
@@ -43,6 +44,7 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
 
   // Handle touch end
   const handleTouchEnd = useCallback(() => {
+    isInsideRef.current = false;
     SoundManager.stopLinkSound(pitch); // Stop sound after touch ends
   }, [pitch]);
 
@@ -60,6 +62,7 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
     console.log("handletouch");
     if (isInsideLink(touchX, touchY)) {
       console.log("Touch is inside the link");
+      isInsideRef.current = true;
       SoundManager.startLinkSound(pitch); // Play sound when touch starts
     }
   }, [pitch, isInsideLink]);
@@ -80,10 +83,12 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
   
     const isInside = isInsideLink(touchX, touchY);
   
-    if (isInside) {
+    if (isInside && !isInsideRef.current) {
       console.log('Touch is inside the link');
+      isInsideRef.current = true;
       SoundManager.startLinkSound(pitch); 
-    } else {
+    } else if ((!isInside && isInsideRef.current)) {
+      isInsideRef.current = false;
       SoundManager.stopLinkSound(pitch);
     }
   }, [isInsideLink, pitch]);
