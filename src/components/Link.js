@@ -31,12 +31,7 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
   
     // Distance from the touch point to the closest point on the line
     const distance = Math.sqrt((touchX - closestX) ** 2 + (touchY - closestY) ** 2);
-  
-    // Log debugging information
-    console.log(`Touch: (${touchX}, ${touchY})`);
-    console.log(`Closest Point on Line: (${closestX}, ${closestY})`);
-    console.log(`Distance to Line: ${distance}`);
-  
+
     // Check if the distance is within the link height (which is half height around the line)
     return distance <= linkHeight / 2;
   }, [x1, y1, x2, y2, linkHeight]);
@@ -59,9 +54,7 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
     const touchX = svgPoint.x;
     const touchY = svgPoint.y;
   
-    console.log("handletouch");
     if (isInsideLink(touchX, touchY)) {
-      console.log("Touch is inside the link");
       isInsideRef.current = true;
       SoundManager.startLinkSound(pitch); // Play sound when touch starts
     }
@@ -78,13 +71,10 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
   
     const touchX = svgPoint.x;
     const touchY = svgPoint.y;
-  
-    console.log("handlemove");
-  
+    
     const isInside = isInsideLink(touchX, touchY);
   
     if (isInside && !isInsideRef.current) {
-      console.log('Touch is inside the link');
       isInsideRef.current = true;
       SoundManager.startLinkSound(pitch); 
     } else if ((!isInside && isInsideRef.current)) {
@@ -93,7 +83,6 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
     }
   }, [isInsideLink, pitch]);
 
-  
 
   useEffect(() => {
     const handleDocumentTouchEnd = (e) => handleTouchEnd(e);
