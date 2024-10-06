@@ -11,31 +11,30 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
   // Calculate the position to place the rectangle
   const rectX = x1;
   const rectY = y1;
-  
+
   const isInsideLink = useCallback((touchX, touchY) => {
     // Translate the touch point relative to the first endpoint of the line
     const dx = touchX - x1;
     const dy = touchY - y1;
-  
+
     // Project the touch point onto the line by finding the closest point on the line
     const lineDx = x2 - x1;
     const lineDy = y2 - y1;
     const lineLengthSquared = lineDx * lineDx + lineDy * lineDy;
-  
+
     // Parametric position on the line (0 = start, 1 = end)
     const t = Math.max(0, Math.min(1, (dx * lineDx + dy * lineDy) / lineLengthSquared));
-  
+
     // Closest point on the line to the touch point
     const closestX = x1 + t * lineDx;
     const closestY = y1 + t * lineDy;
-  
-    // Distance from the touch point to the closest point on the line
-    const distance = Math.sqrt((touchX - closestX) ** 2 + (touchY - closestY) ** 2);
 
-    // Check if the distance is within the link height (which is half height around the line)
-    return distance <= linkHeight / 2;
+    // Squared distance from the touch point to the closest point on the line
+    const distanceSquared = (touchX - closestX) ** 2 + (touchY - closestY) ** 2;
+
+    // Check if the distance is within the link height (squared)
+    return distanceSquared <= (linkHeight / 2) ** 2;
   }, [x1, y1, x2, y2, linkHeight]);
-
 
   // Handle touch end
   const handleTouchEnd = useCallback(() => {
@@ -46,43 +45,51 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
   const handleTouchStart = useCallback((e) => {
     const svg = lineRef.current.ownerSVGElement;
     const point = svg.createSVGPoint();
-    
+
     point.x = e.touches[0].clientX;
     point.y = e.touches[0].clientY;
     const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
-  
+
     const touchX = svgPoint.x;
     const touchY = svgPoint.y;
-  
+
     if (isInsideLink(touchX, touchY)) {
       isInsideRef.current = true;
       SoundManager.startLinkSound(pitch); // Play sound when touch starts
     }
   }, [pitch, isInsideLink]);
-  
-  // Same logic for handleTouchMove and handleTouchEnd
-  const handleTouchMove = useCallback((e) => {
+
+  // Debounce function for touchmove
+  const debounce = (func, delay) => {
+    let timeout;
+    return function (...args) {
+      const context = this;
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(context, args), delay);
+    };
+  };
+
+  const handleTouchMove = useCallback(debounce((e) => {
     const svg = lineRef.current.ownerSVGElement;
     const point = svg.createSVGPoint();
-  
+
     point.x = e.touches[0].clientX;
     point.y = e.touches[0].clientY;
     const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
-  
+
     const touchX = svgPoint.x;
     const touchY = svgPoint.y;
-    
+
     const isInside = isInsideLink(touchX, touchY);
-  
+
     if (isInside && !isInsideRef.current) {
       isInsideRef.current = true;
-      SoundManager.startLinkSound(pitch); 
-    } else if ((!isInside && isInsideRef.current)) {
+      SoundManager.startLinkSound(pitch);
+    } else if (!isInside && isInsideRef.current) {
       isInsideRef.current = false;
       SoundManager.stopLinkSound(pitch);
     }
-  }, [isInsideLink, pitch]);
-
+  }, 5), [isInsideLink, pitch]); // debounce delay
 
   useEffect(() => {
     const handleDocumentTouchEnd = (e) => handleTouchEnd(e);
@@ -96,7 +103,6 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
       document.removeEventListener('touchmove', handleDocumentTouchMove);
     };
   }, [handleTouchEnd, handleTouchMove]); // Include dependencies here
-
 
   return (
     <rect
