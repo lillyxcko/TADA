@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import { SoundManager } from './SoundManager'; // Import the Sound Manager
 
 const Link = ({ x1, y1, x2, y2, pitch }) => {
-  const isInsideRef = useRef(false); // Track if the touch is inside the link
+  const activeTouches = useRef(new Set()); // Track active touches
   const lineRef = useRef(null); // Ref for the rectangle
   const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2); // Length of the link
   const angle = Math.atan2(y2 - y1, x2 - x1); // Angle in radians
@@ -11,24 +11,24 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
   // Calculate the position to place the rectangle
   const rectX = x1;
   const rectY = y1;
-  
+
   const isInsideLink = useCallback((touchX, touchY) => {
     // Translate the touch point relative to the first endpoint of the line
     const dx = touchX - x1;
     const dy = touchY - y1;
-  
+
     // Project the touch point onto the line by finding the closest point on the line
     const lineDx = x2 - x1;
     const lineDy = y2 - y1;
     const lineLengthSquared = lineDx * lineDx + lineDy * lineDy;
-  
+
     // Parametric position on the line (0 = start, 1 = end)
     const t = Math.max(0, Math.min(1, (dx * lineDx + dy * lineDy) / lineLengthSquared));
-  
+
     // Closest point on the line to the touch point
     const closestX = x1 + t * lineDx;
     const closestY = y1 + t * lineDy;
-  
+
     // Distance from the touch point to the closest point on the line
     const distance = Math.sqrt((touchX - closestX) ** 2 + (touchY - closestY) ** 2);
 
@@ -36,50 +36,58 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
     return distance <= linkHeight / 2;
   }, [x1, y1, x2, y2, linkHeight]);
 
-  // Handle touch end
-  const handleTouchEnd = useCallback(() => {
-    isInsideRef.current = false;
-    SoundManager.stopLinkSound(pitch); // Stop sound after touch ends
-  }, [pitch]);
-
   const handleTouchStart = useCallback((e) => {
     const svg = lineRef.current.ownerSVGElement;
-    const point = svg.createSVGPoint();
-    
-    point.x = e.touches[0].clientX;
-    point.y = e.touches[0].clientY;
-    const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
-  
-    const touchX = svgPoint.x;
-    const touchY = svgPoint.y;
-  
-    if (isInsideLink(touchX, touchY)) {
-      isInsideRef.current = true;
-      SoundManager.startLinkSound(pitch); // Play sound when touch starts
+    for (let i = 0; i < e.touches.length; i++) {
+      const point = svg.createSVGPoint();
+      point.x = e.touches[i].clientX;
+      point.y = e.touches[i].clientY;
+      const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+
+      const touchX = svgPoint.x;
+      const touchY = svgPoint.y;
+
+      if (isInsideLink(touchX, touchY)) {
+        activeTouches.current.add(e.touches[i].identifier); // Store the touch identifier
+        SoundManager.startLinkSound(pitch); // Play sound when touch starts
+      }
     }
   }, [pitch, isInsideLink]);
-  
+
   const handleTouchMove = useCallback((e) => {
     const svg = lineRef.current.ownerSVGElement;
-    const point = svg.createSVGPoint();
-  
-    point.x = e.touches[0].clientX;
-    point.y = e.touches[0].clientY;
-    const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
-  
-    const touchX = svgPoint.x;
-    const touchY = svgPoint.y;
-    
-    const isInside = isInsideLink(touchX, touchY);
-  
-    if (isInside && !isInsideRef.current) {
-      isInsideRef.current = true;
-      SoundManager.startLinkSound(pitch); 
-    } else if (!isInside && isInsideRef.current) {
-      isInsideRef.current = false;
-      SoundManager.stopLinkSound(pitch);
+    for (let i = 0; i < e.touches.length; i++) {
+      const point = svg.createSVGPoint();
+      point.x = e.touches[i].clientX;
+      point.y = e.touches[i].clientY;
+      const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+
+      const touchX = svgPoint.x;
+      const touchY = svgPoint.y;
+
+      const isInside = isInsideLink(touchX, touchY);
+      
+      if (isInside && !activeTouches.current.has(e.touches[i].identifier)) {
+        activeTouches.current.add(e.touches[i].identifier);
+        SoundManager.startLinkSound(pitch); // Start sound when touch enters
+      } else if (!isInside && activeTouches.current.has(e.touches[i].identifier)) {
+        activeTouches.current.delete(e.touches[i].identifier);
+        SoundManager.stopLinkSound(pitch); // Stop sound when touch leaves
+      }
     }
   }, [isInsideLink, pitch]);
+
+  const handleTouchEnd = useCallback((e) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const identifier = e.changedTouches[i].identifier;
+      if (activeTouches.current.has(identifier)) {
+        activeTouches.current.delete(identifier); // Remove the touch identifier
+        if (activeTouches.current.size === 0) {
+          SoundManager.stopLinkSound(pitch); // Stop sound if no active touches remain
+        }
+      }
+    }
+  }, [pitch]);
 
   useEffect(() => {
     const handleDocumentTouchEnd = (e) => handleTouchEnd(e);

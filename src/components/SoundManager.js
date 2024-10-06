@@ -36,7 +36,7 @@ export const SoundManager = (() => {
     const synth = trumpetSynths[pitch];
     if (synth) {
       synth.triggerRelease(); // Gradual release of sound
-      delete trumpetSynths[pitch]; // Cleanup the synth instance after release
+      // Do not delete synth from trumpetSynths, allowing it to be reused
     }
   };
 
@@ -63,9 +63,8 @@ export const SoundManager = (() => {
   const stopLinkSound = (pitch) => {
     const synth = pluckSynths[pitch];
     if (synth) {
-      // Here you might want to implement a way to trigger a release if needed
       synth.triggerRelease(); // Gradual release of sound
-      delete pluckSynths[pitch]; // Cleanup the synth instance after release
+      // Do not delete synth from pluckSynths, allowing it to be reused
     }
   };
 
