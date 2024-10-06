@@ -10,54 +10,76 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
   // Calculate the position to place the rectangle
   const rectX = x1;
   const rectY = y1;
-
-  // Check if the touch is inside the link
+  
   const isInsideLink = useCallback((touchX, touchY) => {
-    if (!lineRef.current) return false;
+    // Translate the touch point relative to the first endpoint of the line
+    const dx = touchX - x1;
+    const dy = touchY - y1;
+  
+    // Project the touch point onto the line by finding the closest point on the line
+    const lineDx = x2 - x1;
+    const lineDy = y2 - y1;
+    const lineLengthSquared = lineDx * lineDx + lineDy * lineDy;
+  
+    // Parametric position on the line (0 = start, 1 = end)
+    const t = Math.max(0, Math.min(1, (dx * lineDx + dy * lineDy) / lineLengthSquared));
+  
+    // Closest point on the line to the touch point
+    const closestX = x1 + t * lineDx;
+    const closestY = y1 + t * lineDy;
+  
+    // Distance from the touch point to the closest point on the line
+    const distance = Math.sqrt((touchX - closestX) ** 2 + (touchY - closestY) ** 2);
+  
+    // Log debugging information
+    console.log(`Touch: (${touchX}, ${touchY})`);
+    console.log(`Closest Point on Line: (${closestX}, ${closestY})`);
+    console.log(`Distance to Line: ${distance}`);
+  
+    // Check if the distance is within the link height (which is half height around the line)
+    return distance <= linkHeight / 2;
+  }, [x1, y1, x2, y2, linkHeight]);
 
-    // Get the bounding rectangle of the transformed link
-    const rect = lineRef.current.getBoundingClientRect();
-
-    // Calculate the center of the link
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-
-    // Translate the touch coordinates to the link's local space
-    const translatedX = (touchX - centerX) * Math.cos(-angle) - (touchY - centerY) * Math.sin(-angle);
-    const translatedY = (touchX - centerX) * Math.sin(-angle) + (touchY - centerY) * Math.cos(-angle);
-
-    // Check if the touch coordinates are within the bounds of the rectangle considering its height
-    return (
-      translatedX >= 0 &&
-      translatedX <= length &&
-      Math.abs(translatedY) <= linkHeight 
-    );
-  }, [length, linkHeight, angle]);
-
-  // Handle touch start
-  const handleTouchStart = useCallback((e) => {
-    const touchX = e.touches[0].clientX;
-    const touchY = e.touches[0].clientY;
-    console.log("handletouch");
-    if (isInsideLink(touchX, touchY)) {
-      console.log("Touch is inside the link");
-      SoundManager.startLinkSound(pitch); // Play sound when touch starts
-    }
-  }, [pitch, isInsideLink]);
 
   // Handle touch end
   const handleTouchEnd = useCallback(() => {
     SoundManager.stopLinkSound(pitch); // Stop sound after touch ends
   }, [pitch]);
 
-  // Handle touch move
+  const handleTouchStart = useCallback((e) => {
+    const svg = lineRef.current.ownerSVGElement;
+    const point = svg.createSVGPoint();
+    
+    point.x = e.touches[0].clientX;
+    point.y = e.touches[0].clientY;
+    const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+  
+    const touchX = svgPoint.x;
+    const touchY = svgPoint.y;
+  
+    console.log("handletouch");
+    if (isInsideLink(touchX, touchY)) {
+      console.log("Touch is inside the link");
+      SoundManager.startLinkSound(pitch); // Play sound when touch starts
+    }
+  }, [pitch, isInsideLink]);
+  
+  // Same logic for handleTouchMove and handleTouchEnd
   const handleTouchMove = useCallback((e) => {
-    const touchX = e.touches[0].clientX;
-    const touchY = e.touches[0].clientY;
+    const svg = lineRef.current.ownerSVGElement;
+    const point = svg.createSVGPoint();
+  
+    point.x = e.touches[0].clientX;
+    point.y = e.touches[0].clientY;
+    const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+  
+    const touchX = svgPoint.x;
+    const touchY = svgPoint.y;
+  
     console.log("handlemove");
-
+  
     const isInside = isInsideLink(touchX, touchY);
-
+  
     if (isInside) {
       console.log('Touch is inside the link');
       SoundManager.startLinkSound(pitch); 
@@ -65,6 +87,8 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
       SoundManager.stopLinkSound(pitch);
     }
   }, [isInsideLink, pitch]);
+
+  
 
   useEffect(() => {
     const handleDocumentTouchEnd = (e) => handleTouchEnd(e);
@@ -78,6 +102,7 @@ const Link = ({ x1, y1, x2, y2, pitch }) => {
       document.removeEventListener('touchmove', handleDocumentTouchMove);
     };
   }, [handleTouchEnd, handleTouchMove]); // Include dependencies here
+
 
   return (
     <rect
