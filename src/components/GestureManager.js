@@ -7,7 +7,7 @@ const speakValue = (text) => {
   synth.speak(utterance);
 };
 
-// Calculate the distance between two touch points
+// Calculate the distance between two touch points 
 const getDistance = (touch1, touch2) => {
   const dx = touch1.clientX - touch2.clientX;
   const dy = touch1.clientY - touch2.clientY;
