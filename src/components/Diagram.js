@@ -9,7 +9,7 @@ const Diagram = () => {
   const nodes = [
     { cx: 80, cy: 250, r: 35, pitch: 261.63, value: "cat" },
     { cx: 300, cy: 210, r: 35, pitch: 329.63, value: 576.5 },
-    { cx: 220, cy: 80, r: 35, pitch: 392.00, value: "dog" },
+    { cx: 220, cy: 80, r: 35, pitch: 261.63, value: "dog" },
   ];
 
   // Function to adjust link coordinates based on node radii
