@@ -2,7 +2,7 @@ import * as Tone from 'tone';
 
 export const SoundManager = (() => {
   const MAX_SYNTHS = 8; // Maximum number of synths
-  const trumpetSynths = {}; // Store arrays of trumpet synths keyed by pitch
+  const trumpetSynths = {}; // Store synths by node ID
   const pluckSynths = {}; // Store instances of pluck synths keyed by pitch
   const pluckGain = new Tone.Gain(3.5).toDestination(); // Set the gain for smoother sound
 
@@ -19,39 +19,33 @@ export const SoundManager = (() => {
         release: 2,
       },
     }).toDestination();
-    return synth;
   };
 
   // Start the sound for a node (trumpet-like sound)
-  const startNodeSound = (pitch) => {
+  const startNodeSound = (id, pitch) => {
     if (activeSynths.size >= MAX_SYNTHS) {
-      console.warn('Maximum number of active synths reached. Please release a synth before playing another sound.');
-      return; // Exit if max synths are in use
+      console.warn('Maximum number of active synths reached.');
+      return;
     }
 
-    // Initialize the synth array if it doesn't exist for the pitch
-    if (!trumpetSynths[pitch]) {
-      trumpetSynths[pitch] = [];
+    // If the synth already exists for this node, don't create another
+    if (!trumpetSynths[id]) {
+      const synth = initializeTrumpetSynth();
+      trumpetSynths[id] = synth;
+      activeSynths.add(synth);
+
+      Tone.start();
+      synth.triggerAttack(pitch);
     }
-
-    // Create a new synth instance for each touch
-    const synth = initializeTrumpetSynth();
-    trumpetSynths[pitch].push(synth);
-    activeSynths.add(synth); // Add to active synths set
-
-    Tone.start();
-    synth.triggerAttack(pitch); // Sustain the sound while the touch persists
   };
 
   // Stop the sound for a node (with gradual fade out)
-  const stopNodeSound = (pitch) => {
-    const synthArray = trumpetSynths[pitch];
-    if (synthArray) {
-      const synth = synthArray.pop(); // Remove the last synth instance for the pitch
-      if (synth) {
-        synth.triggerRelease(); // Gradual release of sound
-        activeSynths.delete(synth); // Remove from active synths set
-      }
+  const stopNodeSound = (id) => {
+    const synth = trumpetSynths[id];
+    if (synth) {
+      synth.triggerRelease();
+      activeSynths.delete(synth);
+      delete trumpetSynths[id]; // Remove the synth from storage
     }
   };
 
