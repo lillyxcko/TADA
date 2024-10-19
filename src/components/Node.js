@@ -31,6 +31,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     nodeValue: value, // For gesture handling and TTS announcements
     isInsideCircle,
     infoIndex, // Pass infoIndex to track the current index of info
+    r, // Pass r to GestureManager
   });
 
   // Handle touch start

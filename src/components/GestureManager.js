@@ -15,7 +15,7 @@ const getDistance = (touch1, touch2) => {
 };
 
 // GestureManager component to handle multi-touch gestures
-export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex }) => {
+export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex, r }) => {
   const firstTouchRef = useRef(null); // Store the first touch event (dwell)
   
   // Handle first touch (dwell)
@@ -37,10 +37,8 @@ export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex })
     if (e.touches.length === 2 && firstTouchRef.current) {
       const secondTouch = e.touches[1];
       
-      // Calculate distance from the first touch to the center of the node
-      const dx = firstTouchRef.current.clientX - cx;
-      const dy = firstTouchRef.current.clientY - cy;
-      const distanceToNodeCenter = Math.sqrt(dx * dx + dy * dy);
+      // Use the getDistance function to calculate the distance from the first touch to the center of the node
+      const distanceToNodeCenter = getDistance(firstTouchRef.current, { clientX: cx, clientY: cy });
       
       // Check if the second touch is within 200 pixels from the edge of the node
       if (distanceToNodeCenter <= r + 200) {
