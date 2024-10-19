@@ -15,15 +15,13 @@ const getDistance = (touch1, touch2) => {
 };
 
 // GestureManager component to handle multi-touch gestures
-export const GestureManager = ({ cx, cy, nodeValue, radius, isInsideCircle }) => {
+export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex }) => {
     const firstTouchRef = useRef(null); // Store the first touch event (dwell)
-    const lastSecondTapRef = useRef(null); // Store the last second tap identifier
   
     // Handle first touch (dwell)
     const handleTouchStart = (e) => {
       if (e.touches.length === 1) {
         firstTouchRef.current = e.touches[0]; // Store the first finger touch (dwell)
-        lastSecondTapRef.current = null; // Reset second tap tracking
       }
     };
   
@@ -32,19 +30,17 @@ export const GestureManager = ({ cx, cy, nodeValue, radius, isInsideCircle }) =>
       if (e.touches.length === 1) {
         firstTouchRef.current = e.touches[0]; // Update the stored touch point
       }
-      handleSecondTouch(e); // Check for second tap during movement
     };
   
-    // Handle second tap within a 200px radius of the node
+    // Handle tap to speak value
     const handleSecondTouch = (e) => {
       if (e.touches.length === 2 && firstTouchRef.current) {
         const secondTouch = e.touches[1];
-        const distance = getDistance(firstTouchRef.current, secondTouch);
-  
-        // Trigger TTS only if this is a new second tap and the first touch is inside the node
-        if (isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY) && distance <= 200 && lastSecondTapRef.current !== secondTouch.identifier) {
-          speakValue(nodeValue); // Announce the value of the node
-          lastSecondTapRef.current = secondTouch.identifier; // Track the second tap
+
+        if (isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY)) {
+          // Cycle through information on each second tap
+          speakValue(nodeValue[infoIndex.current]); // Announce the current information
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle index
         }
       }
     };
@@ -52,13 +48,13 @@ export const GestureManager = ({ cx, cy, nodeValue, radius, isInsideCircle }) =>
     // Reset the second tap when the second finger is lifted, allowing TTS to trigger again
     const handleTouchEnd = (e) => {
       if (e.touches.length === 1) {
-        lastSecondTapRef.current = null; // Allow new second taps to trigger TTS
+        firstTouchRef.current = null; // Reset first finger dwell
       }
   
       // Reset everything if the first finger is lifted
       if (e.touches.length === 0) {
         firstTouchRef.current = null; // Reset first finger dwell
-        lastSecondTapRef.current = null; // Reset second tap tracking
+        infoIndex.current = 0; // Reset index for the next use
       }
     };
   
@@ -66,5 +62,6 @@ export const GestureManager = ({ cx, cy, nodeValue, radius, isInsideCircle }) =>
       handleTouchStart,
       handleTouchMove,
       handleTouchEnd,
+      speakValue, // Return the speak function
     };
   };

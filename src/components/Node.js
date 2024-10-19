@@ -6,6 +6,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   const activeTouches = useRef(new Set()); // Track active touches
   const circleRef = useRef(null); // Ref to circle element
   const [radius, setRadius] = useState(r); // State to handle radius
+  const infoIndex = useRef(0); // Keep track of which piece of information to announce
 
   // Helper function to determine if a touch is inside the circle
   const isInsideCircle = useCallback((touchX, touchY) => {
@@ -14,7 +15,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
 
-    const effectiveRadius = r + 60;
+    const effectiveRadius = r + 60; // Adjusted radius for touch detection
     return distanceSquared < effectiveRadius ** 2;
   }, [r]);
 
@@ -23,11 +24,13 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     handleTouchStart: gestureTouchStart,
     handleTouchMove: gestureTouchMove,
     handleTouchEnd: gestureTouchEnd,
+    speakValue, // Include speakValue function from GestureManager
   } = GestureManager({
     cx,
     cy,
     nodeValue: value, // For gesture handling and TTS announcements
     isInsideCircle,
+    infoIndex, // Pass infoIndex to track the current index of info
   });
 
   // Handle touch start
