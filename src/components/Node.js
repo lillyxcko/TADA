@@ -25,6 +25,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     handleTouchMove: gestureTouchMove,
     handleTouchEnd: gestureTouchEnd,
     speakValue, // Include speakValue function from GestureManager
+    handleSecondTouch,
   } = GestureManager({
     cx,
     cy,
