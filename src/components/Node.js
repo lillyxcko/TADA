@@ -66,7 +66,8 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       }
     }
     gestureTouchMove(e); // Forward event to GestureManager
-  }, [id, pitch, r, isInsideCircle, gestureTouchMove]);
+    handleSecondTouch(e);
+  }, [id, pitch, r, isInsideCircle, gestureTouchMove, handleSecondTouch]);
 
   // Handle touch end
   const handleTouchEnd = useCallback((e) => {
@@ -100,7 +101,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   return (
     <circle
       ref={circleRef}
-      cx={cx}
+      cx={cx}a
       cy={cy}
       r={radius}
       fill="lightblue"

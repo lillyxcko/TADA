@@ -35,15 +35,15 @@ export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex })
     // Handle tap to speak value
     const handleSecondTouch = (e) => {
       if (e.touches.length === 2 && firstTouchRef.current) {
-        const secondTouch = e.touches[1];
+          const secondTouch = e.touches[1];
 
-        if (isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY)) {
-          // Cycle through information on each second tap
-          speakValue(nodeValue[infoIndex.current]); // Announce the current information
-          infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle index
-        }
+          if (isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY)) {
+              // Cycle through information on each second tap
+              speakValue(nodeValue[infoIndex.current]); // Announce the current information
+              infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle index
+          }
       }
-    };
+  };
   
     // Reset the second tap when the second finger is lifted, allowing TTS to trigger again
     const handleTouchEnd = (e) => {
@@ -62,6 +62,7 @@ export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex })
       handleTouchStart,
       handleTouchMove,
       handleTouchEnd,
-      speakValue, // Return the speak function
+      handleSecondTouch,
+      speakValue,
     };
   };
