@@ -24,7 +24,6 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     handleTouchStart: gestureTouchStart,
     handleTouchMove: gestureTouchMove,
     handleTouchEnd: gestureTouchEnd,
-    speakValue, // Include speakValue function from GestureManager
     handleSecondTouch,
   } = GestureManager({
     cx,
@@ -102,7 +101,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   return (
     <circle
       ref={circleRef}
-      cx={cx}a
+      cx={cx}
       cy={cy}
       r={radius}
       fill="lightblue"
