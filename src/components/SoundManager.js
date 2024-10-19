@@ -11,9 +11,6 @@ export const SoundManager = (() => {
 
   // Initialize the trumpet synth for node sounds
   const initializeTrumpetSynth = () => {
-    if (Tone.context.state === 'suspended') {
-      Tone.start(); // Start the audio context if it's suspended
-    }
     return new Tone.MonoSynth({
       envelope: {
         attack: 0.1,
