@@ -7,9 +7,9 @@ const Diagram = () => {
 
   // Define the coordinates and properties of the nodes
   const nodes = [
-    { id: 'node-1', cx: 80, cy: 250, r: 35, pitch: 261.63, value: "cat" },
-    { id: 'node-2', cx: 300, cy: 210, r: 35, pitch: 329.63, value: 576.5 },
-    { id: 'node-3', cx: 220, cy: 80, r: 35, pitch: 261.63, value: "dog" },
+    { id: 'node-1', cx: 80, cy: 250, r: 35, pitch: 261.63, value: ["cat", "kitten", "feline"] },
+    { id: 'node-2', cx: 300, cy: 210, r: 35, pitch: 329.63, value: [576.5, 578.5, 580.5] },
+    { id: 'node-3', cx: 220, cy: 80, r: 35, pitch: 261.63, value: ["dog", "puppy", "canine"] },
   ];
 
   // Function to adjust link coordinates based on node radii
