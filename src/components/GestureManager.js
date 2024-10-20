@@ -32,12 +32,14 @@ export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex, r
 
   const handleSecondTouch = (e) => {
     if (e.touches.length === 2 && firstTouchRef.current) {
-      const secondTouch = e.touches[1];
-      const distanceToCenter = getDistance(firstTouchRef.current, { clientX: cx, clientY: cy });
+      const secondTouch = e.touches[1]; // Get the second tap
+      const distance = getDistance(firstTouchRef.current, secondTouch); // Calculate distance
 
-      if (distanceToCenter <= r + 200) {
-        speakValue(nodeValue[infoIndex.current]); // Announce info
-        infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle info index
+      // Ensure the first touch is inside the circle and the second is nearby
+      if (isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY) &&
+          distance <= r + 200) {
+        speakValue(nodeValue[infoIndex.current]); // Announce the node value
+        infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle through values
       }
     }
   };
