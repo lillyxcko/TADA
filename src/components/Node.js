@@ -30,6 +30,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     isInsideCircle,
     infoIndex,
     r,
+    activeTouches // Pass activeTouches to the GestureManager
   });
 
   const handleTouchStart = useCallback((e) => {
