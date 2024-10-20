@@ -1,11 +1,24 @@
 import { useRef } from 'react';
 
-// Initialize Text-to-Speech (TTS)
-const speakValue = (text) => {
+// Debounce function to limit the rate at which a function can fire
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+};
+
+// Initialize Text-to-Speech (TTS) with debouncing
+const speakValue = debounce((text) => {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
   synth.speak(utterance);
-};
+}, 500); // Adjust the debounce delay as needed
 
 // Calculate distance between two touch points
 const getDistance = (touch1, touch2) => {
