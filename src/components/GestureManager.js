@@ -7,36 +7,33 @@ const speakValue = (text) => {
   synth.speak(utterance);
 };
 
-// Calculate the distance between two points (touch and center of the node)
-const getDistanceFromCenter = (touch, centerX, centerY) => {
-  const dx = touch.clientX - centerX;
-  const dy = touch.clientY - centerY;
-  return Math.sqrt(dx * dx + dy * dy);
+const getDistanceFromNodeEdge = (touch, cx, cy, r) => {
+  const dx = touch.clientX - cx;
+  const dy = touch.clientY - cy;
+  const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+  return distanceFromCenter - r; // Distance from the edge, not center
 };
 
 // GestureManager to handle touch gestures per node
 export const GestureManager = ({ nodeValue, isInsideCircle, infoIndex, cx, cy, r }) => {
   const isFirstTouchInside = useRef(false); // Track if the first touch is inside the node
-  const secondTapPending = useRef(false); // Track if we are waiting for second tap release
+  const secondTapPending = useRef(false); // Track if a second tap is pending
 
   // Handle the first touch (dwell)
   const handleTouchStart = (e) => {
     if (e.touches.length === 1) {
-      // Check if the first touch is inside the node
       isFirstTouchInside.current = isInsideCircle(
         e.touches[0].clientX,
         e.touches[0].clientY
       );
-
       secondTapPending.current = false; // Reset second tap flag
-      infoIndex.current = 0; // Reset index on first touch
+      infoIndex.current = 0; // Reset index
     }
   };
 
-  // Handle the movement of the first touch
+  // Handle touch movement
   const handleTouchMove = (e) => {
     if (e.touches.length === 1) {
-      // Update if the touch is still inside the node's boundary
       isFirstTouchInside.current = isInsideCircle(
         e.touches[0].clientX,
         e.touches[0].clientY
@@ -44,36 +41,35 @@ export const GestureManager = ({ nodeValue, isInsideCircle, infoIndex, cx, cy, r
     }
   };
 
-  // Handle the second tap detection
+  // Handle the second tap
   const handleSecondTouch = (e) => {
     if (e.touches.length === 2 && isFirstTouchInside.current) {
-      const secondTouch = e.touches[1]; // Get the second touch point
+      const secondTouch = e.touches[1];
 
-      // Calculate the distance from the node's center to the second touch
-      const distance = getDistanceFromCenter(secondTouch, cx, cy);
+      // Calculate the distance from the second touch to the closest node edge
+      const distance = getDistanceFromNodeEdge(secondTouch, cx, cy, r);
 
-      if (distance <= r + 200) {
-        secondTapPending.current = true; // Mark the second tap as pending
+      // Check if the second touch is within the 200px margin from the node's edge
+      if (distance <= 200) {
+        secondTapPending.current = true; // Mark second tap as pending
       }
     }
   };
 
-  // Handle the release of touches
+  // Handle touch release
   const handleTouchEnd = (e) => {
     if (secondTapPending.current) {
-      // Announce the current value and increment the index
-      speakValue(nodeValue[infoIndex.current]);
+      speakValue(nodeValue[infoIndex.current]); // Announce the current value
 
-      // Cycle through the array indices
+      // Cycle through the values
       infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-
-      secondTapPending.current = false; // Reset the pending tap flag
+      secondTapPending.current = false; // Reset second tap flag
     }
 
-    // Reset everything if all fingers are lifted
+    // Reset when all fingers are lifted
     if (e.touches.length === 0) {
-      isFirstTouchInside.current = false; // Reset the first touch status
-      infoIndex.current = 0; // Reset the index
+      isFirstTouchInside.current = false; // Reset first touch status
+      infoIndex.current = 0; // Reset index
     }
   };
 
