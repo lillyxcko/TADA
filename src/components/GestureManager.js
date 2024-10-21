@@ -7,69 +7,68 @@ const speakValue = (text) => {
   synth.speak(utterance);
 };
 
-const getDistanceFromNodeEdge = (touch, cx, cy, r) => {
-  const dx = touch.clientX - cx;
-  const dy = touch.clientY - cy;
-  const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
-  return distanceFromCenter - r; // Distance from the edge, not center
+// Calculate distance between two touch points
+const getDistance = (touch1, touch2) => {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
 };
 
 // GestureManager to handle touch gestures per node
-export const GestureManager = ({ nodeValue, isInsideCircle, infoIndex, cx, cy, r }) => {
+export const GestureManager = ({ nodeValue, isInsideCircle, infoIndex, r }) => {
+  const firstTouchRef = useRef(null); // Store first touch (dwell)
   const isFirstTouchInside = useRef(false); // Track if the first touch is inside the node
-  const secondTapPending = useRef(false); // Track if a second tap is pending
+  const secondTapPending = useRef(false); // Track if we are waiting for second tap release
 
-  // Handle the first touch (dwell)
   const handleTouchStart = (e) => {
     if (e.touches.length === 1) {
+      firstTouchRef.current = e.touches[0]; // Store the first touch
       isFirstTouchInside.current = isInsideCircle(
-        e.touches[0].clientX,
-        e.touches[0].clientY
-      );
-      secondTapPending.current = false; // Reset second tap flag
-      infoIndex.current = 0; // Reset index
+        firstTouchRef.current.clientX,
+        firstTouchRef.current.clientY
+      ); // Check if inside node
+      secondTapPending.current = false; // Reset pending tap flag
+      infoIndex.current = 0; // Reset index on first touch
     }
   };
 
-  // Handle touch movement
   const handleTouchMove = (e) => {
     if (e.touches.length === 1) {
+      firstTouchRef.current = e.touches[0]; // Update first touch coordinates
       isFirstTouchInside.current = isInsideCircle(
-        e.touches[0].clientX,
-        e.touches[0].clientY
+        firstTouchRef.current.clientX,
+        firstTouchRef.current.clientY
       );
     }
   };
 
-  // Handle the second tap
-  const handleSecondTouch = (e) => {
-    if (e.touches.length === 2 && isFirstTouchInside.current) {
-      const secondTouch = e.touches[1];
+  const handleTouchEnd = (e) => {
+    if (secondTapPending.current) {
+      // If a second tap was detected and this is its release
+      speakValue(nodeValue[infoIndex.current]); // Announce current value
 
-      // Calculate the distance from the second touch to the closest node edge
-      const distance = getDistanceFromNodeEdge(secondTouch, cx, cy, r);
+      // Increment index, cycling if needed
+      infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
 
-      // Check if the second touch is within the 200px margin from the node's edge
-      if (distance <= 200) {
-        secondTapPending.current = true; // Mark second tap as pending
-      }
+      secondTapPending.current = false; // Reset pending tap flag
+    }
+
+    // Reset everything if all fingers are lifted
+    if (e.touches.length === 0) {
+      firstTouchRef.current = null; // Reset first touch
+      infoIndex.current = 0; // Reset index when all fingers are lifted
     }
   };
 
-  // Handle touch release
-  const handleTouchEnd = (e) => {
-    if (secondTapPending.current) {
-      speakValue(nodeValue[infoIndex.current]); // Announce the current value
+  const handleSecondTouch = (e) => {
+    if (e.touches.length === 2 && firstTouchRef.current) {
+      const secondTouch = e.touches[1]; // Store second touch
+      const distance = getDistance(firstTouchRef.current, secondTouch); // Calculate distance
 
-      // Cycle through the values
-      infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-      secondTapPending.current = false; // Reset second tap flag
-    }
-
-    // Reset when all fingers are lifted
-    if (e.touches.length === 0) {
-      isFirstTouchInside.current = false; // Reset first touch status
-      infoIndex.current = 0; // Reset index
+      // Confirm this is a valid second tap
+      if (isFirstTouchInside.current && distance <= 200) {
+        secondTapPending.current = true; // Mark tap as pending (wait for release)
+      }
     }
   };
 
