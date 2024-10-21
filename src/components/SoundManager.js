@@ -1,56 +1,51 @@
 import * as Tone from 'tone';
 
 export const SoundManager = (() => {
-  const MAX_SYNTHS = 8; // Maximum number of synths
-  const trumpetSynths = {}; // Store synths by node ID
-  const pluckSynths = {}; // Store instances of pluck synths keyed by pitch
-  const pluckGain = new Tone.Gain(3.5).toDestination(); // Set the gain for smoother sound
+  const MAX_SYNTHS = 8; // Maximum number of concurrent synths
+  const trumpetGain = new Tone.Gain(0.8).connect(new Tone.Limiter(-6).toDestination());
+  const pluckGain = new Tone.Gain(1.5).toDestination(); 
 
-  // Pool to manage active synths
-  const activeSynths = new Set(); 
+  // Use a PolySynth to handle multiple voices efficiently
+  const polySynth = new Tone.PolySynth(Tone.MonoSynth, {
+    envelope: {
+      attack: 0.1,
+      decay: 0.2,
+      sustain: 1,
+      release: 0.2,
+    },
+  }).connect(trumpetGain);
 
-  // Initialize the trumpet synth for node sounds
-  const initializeTrumpetSynth = () => {
-    return new Tone.MonoSynth({
-      envelope: {
-        attack: 0.1,
-        decay: 0.2,
-        sustain: 1,
-        release: 2,
-      },
-    }).toDestination();
+  const pluckSynths = {}; // Store instances of pluck synths by pitch
+
+  // Pool of active trumpet synths for reuse
+  const synthPool = [];
+  
+  // Get a synth from the pool or create a new one
+  const getSynthFromPool = () => {
+    return synthPool.length > 0 ? synthPool.pop() : new Tone.MonoSynth().connect(trumpetGain);
+  };
+
+  // Return a synth to the pool after use
+  const releaseSynthToPool = (synth) => {
+    synth.triggerRelease();
+    setTimeout(() => synthPool.push(synth), 200); // Return after release
   };
 
   // Start the sound for a node (trumpet-like sound)
   const startNodeSound = (id, pitch) => {
-    if (activeSynths.size >= MAX_SYNTHS) {
+    if (polySynth.activeVoices >= MAX_SYNTHS) {
       console.warn('Maximum number of active synths reached.');
       return;
     }
 
-    // If the synth already exists for this node, don't create another
-    if (!trumpetSynths[id]) {
-      const synth = initializeTrumpetSynth();
-      trumpetSynths[id] = synth;
-      activeSynths.add(synth);
-
-      Tone.start();
-      synth.triggerAttack(pitch);
-    }
+    // Use PolySynth to trigger the sound
+    Tone.start();
+    polySynth.triggerAttack(pitch, Tone.now(), 1); // Velocity 1 for consistent volume
   };
 
   // Stop the sound for a node (with gradual fade out)
-  const stopNodeSound = (id) => {
-    const synth = trumpetSynths[id];
-    if (synth) {
-      synth.triggerRelease();
-
-      // Delay removal to allow the release envelope to complete
-      setTimeout(() => {
-        activeSynths.delete(synth);
-        delete trumpetSynths[id]; // Remove the synth after release
-      }, 2); // Match the release duration
-    }
+  const stopNodeSound = (id, pitch) => {
+    polySynth.triggerRelease(pitch, Tone.now() + 0.2); // Fade out with the release time
   };
 
   // Initialize the guitar pluck sound for link sounds
