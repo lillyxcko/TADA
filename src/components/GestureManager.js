@@ -16,59 +16,59 @@ const getDistance = (touch1, touch2) => {
 
 // GestureManager to handle touch gestures per node
 export const GestureManager = ({ nodeValue, isInsideCircle, infoIndex, r }) => {
-  const firstTouchRef = useRef(null); // Store first touch per node
-  const secondTouchRef = useRef(null); // Store second touch for TTS
-  const isFirstTouchInside = useRef(false); // Track if first touch is inside the node
+  const firstTouchRef = useRef(null); // Store first touch (dwell)
+  const isFirstTouchInside = useRef(false); // Track if the first touch is inside the node
+  const secondTapPending = useRef(false); // Track if we are waiting for second tap release
 
   const handleTouchStart = (e) => {
     if (e.touches.length === 1) {
-      firstTouchRef.current = e.touches[0];
-      isFirstTouchInside.current = isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY);
-      secondTouchRef.current = null; // Reset second touch
+      firstTouchRef.current = e.touches[0]; // Store the first touch
+      isFirstTouchInside.current = isInsideCircle(
+        firstTouchRef.current.clientX,
+        firstTouchRef.current.clientY
+      ); // Check if inside node
+      secondTapPending.current = false; // Reset pending tap flag
       infoIndex.current = 0; // Reset index on first touch
     }
   };
 
   const handleTouchMove = (e) => {
     if (e.touches.length === 1) {
-      firstTouchRef.current = e.touches[0];
-      isFirstTouchInside.current = isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY);
+      firstTouchRef.current = e.touches[0]; // Update first touch coordinates
+      isFirstTouchInside.current = isInsideCircle(
+        firstTouchRef.current.clientX,
+        firstTouchRef.current.clientY
+      );
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (secondTapPending.current) {
+      // If a second tap was detected and this is its release
+      speakValue(nodeValue[infoIndex.current]); // Announce current value
+
+      // Increment index, cycling if needed
+      infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+
+      secondTapPending.current = false; // Reset pending tap flag
+    }
+
+    // Reset everything if all fingers are lifted
+    if (e.touches.length === 0) {
+      firstTouchRef.current = null; // Reset first touch
+      infoIndex.current = 0; // Reset index when all fingers are lifted
     }
   };
 
   const handleSecondTouch = (e) => {
     if (e.touches.length === 2 && firstTouchRef.current) {
-      const secondTouch = e.touches[1]; // Get the second tap
-      secondTouchRef.current = secondTouch; // Store second touch
+      const secondTouch = e.touches[1]; // Store second touch
       const distance = getDistance(firstTouchRef.current, secondTouch); // Calculate distance
 
-      // Ensure the first touch is inside the circle and the second is nearby
+      // Confirm this is a valid second tap
       if (isFirstTouchInside.current && distance <= r + 200) {
-        // Trigger TTS for the current index
-        speakValue(nodeValue[infoIndex.current]);
-
-        // Increment index and wrap around
-        infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Increment index
+        secondTapPending.current = true; // Mark tap as pending (wait for release)
       }
-    }
-  };
-
-  const handleTouchEnd = (e) => {
-    if (e.touches.length === 0) {
-      // No touches left
-      firstTouchRef.current = null; // Reset first touch
-      secondTouchRef.current = null; // Reset second touch
-      infoIndex.current = 0; // Reset index when all fingers are lifted
-    } else {
-      // Check for any remaining touches
-      for (let i = 0; i < e.touches.length; i++) {
-        if (e.touches[i].identifier !== firstTouchRef.current.identifier) {
-          // If there's still a second touch, keep the current index
-          return; // Exit early to not reset index
-        }
-      }
-      // If only one finger is left (first finger), allow for the next second tap
-      infoIndex.current = 0; // Reset index to start over
     }
   };
 
