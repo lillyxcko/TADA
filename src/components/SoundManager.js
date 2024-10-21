@@ -49,7 +49,7 @@ export const SoundManager = (() => {
       setTimeout(() => {
         activeSynths.delete(synth);
         delete trumpetSynths[id]; // Remove the synth after release
-      }, 2000); // Match the release duration
+      }, 2); // Match the release duration
     }
   };
 
