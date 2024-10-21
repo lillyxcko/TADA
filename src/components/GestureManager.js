@@ -19,10 +19,12 @@ export const GestureManager = ({ nodeValue, isInsideCircle, infoIndex, r }) => {
   const firstTouchRef = useRef(null); // Store first touch per node
   const secondTouchRef = useRef(null); // Store second touch for TTS
   const ttsSpokenRef = useRef(false); // Track if TTS has been spoken
+  const isFirstTouchInside = useRef(false); // Track if first touch is inside the node
 
   const handleTouchStart = (e) => {
     if (e.touches.length === 1) {
       firstTouchRef.current = e.touches[0];
+      isFirstTouchInside.current = isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY);
       secondTouchRef.current = null; // Reset second touch
       ttsSpokenRef.current = false; // Reset TTS spoken state
     }
@@ -31,25 +33,29 @@ export const GestureManager = ({ nodeValue, isInsideCircle, infoIndex, r }) => {
   const handleTouchMove = (e) => {
     if (e.touches.length === 1) {
       firstTouchRef.current = e.touches[0];
+      isFirstTouchInside.current = isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY);
     }
   };
 
   const handleSecondTouch = (e) => {
-    if (e.touches.length === 2) {
+    if (e.touches.length === 2 && firstTouchRef.current) {
       const secondTouch = e.touches[1]; // Get the second tap
       secondTouchRef.current = secondTouch; // Store second touch
       const distance = getDistance(firstTouchRef.current, secondTouch); // Calculate distance
 
       // Ensure the first touch is inside the circle and the second is nearby
-      if (isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY) &&
-          distance <= r + 200) {
-        // Increment index and trigger TTS for the current index
+      if (isFirstTouchInside.current && distance <= r + 200) {
+        // Prevent rapid triggering by using a timeout
         if (!ttsSpokenRef.current) {
-          // Trigger TTS for the current index
-          speakValue(nodeValue[infoIndex.current]);
           ttsSpokenRef.current = true; // Mark TTS as spoken
+          speakValue(nodeValue[infoIndex.current]);
+
+          // Reset TTS spoken state after a brief timeout
+          setTimeout(() => {
+            ttsSpokenRef.current = false; // Allow TTS to be triggered again
+          }, 500); // Adjust the timeout duration as needed
         } else {
-          // Increment index only if TTS was already spoken
+          // If TTS was already spoken, increment index and trigger TTS for the new index
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Increment index
           speakValue(nodeValue[infoIndex.current]); // Speak the new index
         }
@@ -58,12 +64,13 @@ export const GestureManager = ({ nodeValue, isInsideCircle, infoIndex, r }) => {
   };
 
   const handleTouchEnd = (e) => {
-    // Reset states if no touches are left
     if (e.touches.length === 0) {
+      // No touches left
       firstTouchRef.current = null; // Reset first touch
       secondTouchRef.current = null; // Reset second touch
       infoIndex.current = 0; // Reset index when the first finger is lifted
       ttsSpokenRef.current = false; // Reset TTS spoken state
+      isFirstTouchInside.current = false; // Reset inside state
     } else {
       // Check for any remaining touches
       for (let i = 0; i < e.touches.length; i++) {
