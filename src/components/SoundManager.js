@@ -28,16 +28,15 @@ export const SoundManager = (() => {
       return;
     }
 
-    // Reuse existing synth if available, otherwise create a new one
-    let synth = trumpetSynths[id];
-    if (!synth) {
-      synth = initializeTrumpetSynth();
+    // If the synth already exists for this node, don't create another
+    if (!trumpetSynths[id]) {
+      const synth = initializeTrumpetSynth();
       trumpetSynths[id] = synth;
       activeSynths.add(synth);
-    }
 
-    Tone.start();
-    synth.triggerAttack(pitch);
+      Tone.start();
+      synth.triggerAttack(pitch);
+    }
   };
 
   // Stop the sound for a node (with gradual fade out)
