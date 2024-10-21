@@ -15,13 +15,15 @@ const getDistance = (touch1, touch2) => {
 };
 
 // GestureManager to handle touch gestures per node
-export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex, r }) => {
+export const GestureManager = ({ nodeValue, isInsideCircle, infoIndex, r }) => {
   const firstTouchRef = useRef(null); // Store first touch per node
+  const secondTouchRef = useRef(null); // Store second touch for TTS
   const ttsSpokenRef = useRef(false); // Track if TTS has been spoken
 
   const handleTouchStart = (e) => {
     if (e.touches.length === 1) {
       firstTouchRef.current = e.touches[0];
+      secondTouchRef.current = null; // Reset second touch
       ttsSpokenRef.current = false; // Reset TTS spoken state
     }
   };
@@ -33,34 +35,40 @@ export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex, r
   };
 
   const handleSecondTouch = (e) => {
-    if (e.touches.length === 2 && firstTouchRef.current) {
+    if (e.touches.length === 2) {
       const secondTouch = e.touches[1]; // Get the second tap
+      secondTouchRef.current = secondTouch; // Store second touch
       const distance = getDistance(firstTouchRef.current, secondTouch); // Calculate distance
 
       // Ensure the first touch is inside the circle and the second is nearby
       if (isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY) &&
           distance <= r + 200) {
-        // Check if TTS has been spoken or not
+        // Increment index and trigger TTS for the current index
         if (!ttsSpokenRef.current) {
           // Trigger TTS for the current index
           speakValue(nodeValue[infoIndex.current]);
           ttsSpokenRef.current = true; // Mark TTS as spoken
+        } else {
+          // Increment index only if TTS was already spoken
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Increment index
+          speakValue(nodeValue[infoIndex.current]); // Speak the new index
         }
       }
     }
   };
 
   const handleTouchEnd = (e) => {
+    // Reset states if no touches are left
     if (e.touches.length === 0) {
       firstTouchRef.current = null; // Reset first touch
+      secondTouchRef.current = null; // Reset second touch
       infoIndex.current = 0; // Reset index when the first finger is lifted
       ttsSpokenRef.current = false; // Reset TTS spoken state
     } else {
       // Check for any remaining touches
       for (let i = 0; i < e.touches.length; i++) {
         if (e.touches[i].identifier !== firstTouchRef.current.identifier) {
-          // If there's still a second touch, increment the index
-          infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Increment index
+          // If there's still a second touch, allow the next tap
           ttsSpokenRef.current = false; // Allow TTS to be triggered again
         }
       }
