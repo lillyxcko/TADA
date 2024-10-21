@@ -1,24 +1,11 @@
 import { useRef } from 'react';
 
-// Debounce function to limit the rate at which a function can fire
-const debounce = (func, delay) => {
-  let timeoutId;
-  return (...args) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    timeoutId = setTimeout(() => {
-      func(...args);
-    }, delay);
-  };
-};
-
-// Initialize Text-to-Speech (TTS) with debouncing
-const speakValue = debounce((text) => {
+// Initialize Text-to-Speech (TTS)
+const speakValue = (text) => {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
   synth.speak(utterance);
-}, 500); // Adjust the debounce delay as needed
+};
 
 // Calculate distance between two touch points
 const getDistance = (touch1, touch2) => {
@@ -30,10 +17,14 @@ const getDistance = (touch1, touch2) => {
 // GestureManager to handle touch gestures per node
 export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex, r }) => {
   const firstTouchRef = useRef(null); // Store first touch per node
+  const hasSpokenRef = useRef(false); // Track if TTS has been spoken
+  const isSecondTapRef = useRef(false); // Track if the second tap has been handled
 
   const handleTouchStart = (e) => {
     if (e.touches.length === 1) {
       firstTouchRef.current = e.touches[0];
+      hasSpokenRef.current = false; // Reset spoken state
+      isSecondTapRef.current = false; // Reset second tap state
     }
   };
 
@@ -51,10 +42,15 @@ export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex, r
       // Ensure the first touch is inside the circle and the second is nearby
       if (isInsideCircle(firstTouchRef.current.clientX, firstTouchRef.current.clientY) &&
           distance <= r + 200) {
-        
-        // Increment index on the second tap only
-        infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Increment index
-        speakValue(nodeValue[infoIndex.current]); // Announce the node value
+        // Trigger TTS if it hasn't been spoken yet
+        if (!hasSpokenRef.current) {
+          speakValue(nodeValue[infoIndex.current]); // Announce the node value
+          hasSpokenRef.current = true; // Mark TTS as spoken
+        } else if (!isSecondTapRef.current) {
+          // Increment index only on the next second tap
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+          isSecondTapRef.current = true; // Mark second tap as handled
+        }
       }
     }
   };
@@ -62,6 +58,9 @@ export const GestureManager = ({ cx, cy, nodeValue, isInsideCircle, infoIndex, r
   const handleTouchEnd = (e) => {
     if (e.touches.length === 0) {
       firstTouchRef.current = null;
+      infoIndex.current = 0; // Reset index if necessary
+      hasSpokenRef.current = false; // Reset TTS spoken state
+      isSecondTapRef.current = false; // Reset second tap state
     }
   };
 
