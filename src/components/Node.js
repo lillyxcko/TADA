@@ -24,10 +24,12 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     handleTouchEnd: gestureTouchEnd,
     handleSecondTouch,
   } = GestureManager({
-    nodeId: id,
+    cx,
+    cy,
     nodeValue: value,
     isInsideCircle,
     infoIndex,
+    r,
   });
 
   const handleTouchStart = useCallback((e) => {
@@ -38,7 +40,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         activeTouches.current.add(e.touches[i].identifier);
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
-        gestureTouchStart(id, e.touches[i]); // Pass node ID and touch
+        gestureTouchStart(id, e.touches[i]); // Pass the node ID to the gesture manager
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureTouchStart]);
@@ -48,7 +50,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       const touchX = e.touches[i].clientX;
       const touchY = e.touches[i].clientY;
       const isInside = isInsideCircle(touchX, touchY);
-
+  
       if (isInside && !activeTouches.current.has(e.touches[i].identifier)) {
         activeTouches.current.add(e.touches[i].identifier);
         SoundManager.startNodeSound(id, pitch);
@@ -59,8 +61,9 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         setRadius(r);
       }
     }
-    gestureTouchMove(id, e); // Pass node ID to GestureManager
-  }, [id, pitch, r, isInsideCircle, gestureTouchMove]);
+    gestureTouchMove(e);
+    handleSecondTouch(id, e.touches[e.touches.length - 1]); // Pass the node ID to handleSecondTouch
+  }, [id, pitch, r, isInsideCircle, gestureTouchMove, handleSecondTouch]);
 
   const handleTouchEnd = useCallback((e) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
@@ -73,7 +76,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         }
       }
     }
-    gestureTouchEnd(id, e); // Pass node ID to GestureManager
+    gestureTouchEnd(e);
   }, [id, r, gestureTouchEnd]);
 
   useEffect(() => {

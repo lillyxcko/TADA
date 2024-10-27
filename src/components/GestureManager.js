@@ -12,21 +12,24 @@ const getDistance = (touch1, touch2) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-export const GestureManager = ({ nodeId, nodeValue, isInsideCircle, infoIndex }) => {
+export const GestureManager = ({ nodeValue, infoIndex }) => {
   const touchesByNode = useRef(new Map()); // Store touches per node
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
       touchesByNode.current.set(nodeId, {
-        firstTouch: touch,
+        firstTouch: null,
         secondTapPending: false,
+        isFirstTouchInside: false,
       });
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
-    nodeTouches.firstTouch = touch;
-    nodeTouches.secondTapPending = false;
-    infoIndex.current = 0; // Reset TTS cycle on new touch
+    if (!nodeTouches.firstTouch) {
+      nodeTouches.firstTouch = touch; // Store the first touch for this node
+      nodeTouches.isFirstTouchInside = true; // Assuming the touch started inside the node
+      infoIndex.current = 0; // Reset TTS cycle on new touch
+    }
   };
 
   const handleSecondTouch = (nodeId, secondTouch) => {
@@ -43,7 +46,9 @@ export const GestureManager = ({ nodeId, nodeValue, isInsideCircle, infoIndex })
 
     if (nodeTouches?.secondTapPending) {
       speakValue(nodeValue[infoIndex.current]); // Announce current value
-      infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle index
+
+      // Increment index, cycling if needed
+      infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
       nodeTouches.secondTapPending = false;
     }
 
