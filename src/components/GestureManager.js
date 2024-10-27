@@ -12,24 +12,23 @@ const getDistance = (touch1, touch2) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-export const GestureManager = ({ nodeValue, infoIndex }) => {
+export const GestureManager = ({ nodeValue, infoIndex, r }) => {
   const touchesByNode = useRef(new Map()); // Store touches per node
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
       touchesByNode.current.set(nodeId, {
-        firstTouch: null,
+        firstTouch: touch,
         secondTapPending: false,
         isFirstTouchInside: false,
       });
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
-    if (!nodeTouches.firstTouch) {
-      nodeTouches.firstTouch = touch; // Store the first touch for this node
-      nodeTouches.isFirstTouchInside = true; // Assuming the touch started inside the node
-      infoIndex.current = 0; // Reset TTS cycle on new touch
-    }
+    nodeTouches.firstTouch = touch;
+    nodeTouches.isFirstTouchInside = true; // Assuming the touch started inside the node
+    nodeTouches.secondTapPending = false;
+    infoIndex.current = 0; // Reset TTS cycle on new touch
   };
 
   const handleSecondTouch = (nodeId, secondTouch) => {
