@@ -31,6 +31,7 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
       touchesByNode.current.set(nodeId, {
         firstTouch: touch,
         secondTapPending: false,
+        isActiveTouch: true, // Mark node as having an active touch
       });
     }
 
@@ -74,7 +75,8 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
       if (closestNodeId) {
         const nodeTouches = touchesByNode.current.get(closestNodeId);
 
-        if (nodeTouches?.secondTapPending && !isSpeaking) {
+        // Only trigger TTS if there is an active touch and second tap is pending
+        if (nodeTouches?.isActiveTouch && nodeTouches.secondTapPending && !isSpeaking) {
           speakValue(nodeValue[infoIndex.current]);
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle through values
           nodeTouches.secondTapPending = false; // Reset pending state
@@ -83,6 +85,10 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     }
 
     if (e.touches.length === 0) {
+      // Reset the state when all touches end
+      touchesByNode.current.forEach((nodeTouches) => {
+        nodeTouches.isActiveTouch = false; // Reset active touch tracking
+      });
       touchesByNode.current.clear();
       infoIndex.current = 0; // Reset TTS index
     }
@@ -94,4 +100,3 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     handleTouchEnd,
   };
 };
-
