@@ -23,12 +23,12 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     for (let i = 0; i < e.touches.length; i++) {
       const touch = e.touches[i];
       const { clientX, clientY, identifier } = touch;
-
+  
       if (isInsideCircle(clientX, clientY)) {
         activeTouches.current.add(identifier);
+        gestureManager.handleTouchStart(id, touch); // Pass touch to GestureManager
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
-        gestureManager.handleTouchStart(id, touch); // Pass node id to handleTouchStart
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
@@ -37,20 +37,21 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     for (let i = 0; i < e.touches.length; i++) {
       const touch = e.touches[i];
       const { clientX, clientY, identifier } = touch;
-      const isInside = isInsideCircle(clientX, clientY);
-
-      if (isInside && !activeTouches.current.has(identifier)) {
+      
+      // Update logic to track multiple touches
+      if (isInsideCircle(clientX, clientY) && !activeTouches.current.has(identifier)) {
         activeTouches.current.add(identifier);
+        gestureManager.handleTouchStart(id, touch); // Update for the GestureManager
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
-      } else if (!isInside && activeTouches.current.has(identifier)) {
+      } else if (!isInsideCircle(clientX, clientY) && activeTouches.current.has(identifier)) {
         activeTouches.current.delete(identifier);
         SoundManager.stopNodeSound(id);
         setRadius(r);
       }
-
+  
       if (e.touches.length === 2) {
-        gestureManager.handleSecondTouch(id, e.touches[1]); // Pass node id to handleSecondTouch
+        gestureManager.handleSecondTouch(id, e.touches[1]); // Handle second touch event
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
