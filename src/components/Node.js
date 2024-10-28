@@ -1,3 +1,4 @@
+// Node.js
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { SoundManager } from './SoundManager';
 import { GestureManager } from './GestureManager';
@@ -8,18 +9,15 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   const [radius, setRadius] = useState(r); // State to handle radius
   const infoIndex = useRef(0); // Track which piece of info to announce
 
-  const {
-    handleTouchStart,
-    handleSecondTouch,
-    handleTouchEnd,
-  } = GestureManager({ nodeValue: value, infoIndex, r, id });
+  // Initialize GestureManager with the current node's id and values
+  const gestureManager = GestureManager({ nodeId: id, nodeValue: value, infoIndex, r });
 
   const isInsideCircle = useCallback((touchX, touchY) => {
     const circle = circleRef.current.getBoundingClientRect();
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const effectiveRadius = r + 60;
+    const effectiveRadius = r + 60; // Extra padding to account for interaction area
     return distanceSquared < effectiveRadius ** 2;
   }, [r]);
 
@@ -32,10 +30,10 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         activeTouches.current.add(identifier);
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
-        handleTouchStart(id, touch); // Register the touch with GestureManager
+        gestureManager.handleTouchStart(touch); // Pass the touch to GestureManager
       }
     }
-  }, [id, pitch, r, isInsideCircle, handleTouchStart]);
+  }, [id, pitch, r, isInsideCircle, gestureManager]);
 
   const handleNodeTouchMove = useCallback((e) => {
     for (let i = 0; i < e.touches.length; i++) {
@@ -54,10 +52,10 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       }
 
       if (e.touches.length === 2) {
-        handleSecondTouch(id, e.touches[1]); // Handle second tap only for this node
+        gestureManager.handleSecondTouch(e.touches[1]); // Handle second touch
       }
     }
-  }, [id, pitch, r, isInsideCircle, handleSecondTouch]);
+  }, [id, pitch, r, isInsideCircle, gestureManager]);
 
   const handleNodeTouchEnd = useCallback((e) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
@@ -69,8 +67,8 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         setRadius(r);
       }
     }
-    handleTouchEnd(id, e); // Notify GestureManager of touch end
-  }, [id, r, handleTouchEnd]);
+    gestureManager.handleTouchEnd(e); // Notify GestureManager of touch end
+  }, [id, r, gestureManager]);
 
   useEffect(() => {
     const handleDocumentTouchEnd = (e) => handleNodeTouchEnd(e);
