@@ -43,6 +43,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         activeTouches.current.add(identifier);
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
+        gestureManager.handleTouchStart(id, touch); 
       } else if (!isInside && activeTouches.current.has(identifier)) {
         activeTouches.current.delete(identifier);
         SoundManager.stopNodeSound(id);
