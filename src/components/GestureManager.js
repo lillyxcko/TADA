@@ -25,7 +25,6 @@ const getDistance = (touch1, touch2) => {
 
 export const GestureManager = ({ nodeValue, infoIndex, r }) => {
   const touchesByNode = useRef(new Map());
-  const touchTimeouts = useRef(new Map()); // Store timeout IDs
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
@@ -39,12 +38,6 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     nodeTouches.firstTouch = touch;
     nodeTouches.secondTapPending = false; // Reset state on new touch
     infoIndex.current = 0; // Reset TTS index
-
-    // Start a timeout for quick tap detection
-    touchTimeouts.current.set(touch.identifier, setTimeout(() => {
-      // If the timeout completes, it means it's a long press
-      nodeTouches.longPress = true; // Mark as long press
-    }, 300)); // Set duration for long press (e.g., 300ms)
   };
 
   const handleSecondTouch = (nodeId, secondTouch) => {
@@ -77,24 +70,15 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
       const touch = e.changedTouches[i];
       const closestNodeId = findClosestNodeWithinRange(touch);
-      const nodeTouches = touchesByNode.current.get(closestNodeId);
 
-      // Clear the timeout if touch ends before the long press duration
-      const timeoutId = touchTimeouts.current.get(touch.identifier);
-      clearTimeout(timeoutId);
-      touchTimeouts.current.delete(touch.identifier);
+      if (closestNodeId) {
+        const nodeTouches = touchesByNode.current.get(closestNodeId);
 
-      if (closestNodeId && nodeTouches && !nodeTouches.longPress) {
         if (nodeTouches?.secondTapPending && !isSpeaking) {
           speakValue(nodeValue[infoIndex.current]);
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle through values
           nodeTouches.secondTapPending = false; // Reset pending state
         }
-      }
-
-      // Reset long press flag on touch end
-      if (nodeTouches) {
-        nodeTouches.longPress = false; // Reset after touch ends
       }
     }
 
