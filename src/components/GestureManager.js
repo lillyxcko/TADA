@@ -13,7 +13,7 @@ const getDistance = (touch1, touch2) => {
 };
 
 export const GestureManager = ({ nodeValue, infoIndex, r }) => {
-  const touchesByNode = useRef(new Map()); // Track touches per node
+  const touchesByNode = useRef(new Map());
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
@@ -24,18 +24,17 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
-    nodeTouches.firstTouch = touch; // Update the first touch
-    nodeTouches.secondTapPending = false; // Reset second tap state
-    infoIndex.current = 0; // Reset TTS cycle on new touch
+    nodeTouches.firstTouch = touch;
+    nodeTouches.secondTapPending = false; // Reset state on new touch
+    infoIndex.current = 0; // Reset TTS index
   };
 
   const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch } = nodeTouches;
 
-    // Check if the second tap is within 200px of the first touch
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 200) {
-      nodeTouches.secondTapPending = true;
+      nodeTouches.secondTapPending = true; // Mark second tap as pending
     }
   };
 
@@ -65,17 +64,16 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
         const nodeTouches = touchesByNode.current.get(closestNodeId);
 
         if (nodeTouches?.secondTapPending) {
-          speakValue(nodeValue[infoIndex.current]); // Announce current value
-          infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle index
-          nodeTouches.secondTapPending = false;
+          speakValue(nodeValue[infoIndex.current]);
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle through values
+          nodeTouches.secondTapPending = false; // Reset pending state
         }
       }
     }
 
-    // Clean up if no more active touches for any node
     if (e.touches.length === 0) {
       touchesByNode.current.clear();
-      infoIndex.current = 0; // Reset TTS index when all fingers are lifted
+      infoIndex.current = 0; // Reset TTS index
     }
   };
 
