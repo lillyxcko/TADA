@@ -1,8 +1,19 @@
 import { useRef } from 'react';
 
+let isSpeaking = false; // Global flag to track if TTS is currently speaking
+
 const speakValue = (text) => {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
+
+  utterance.onstart = () => {
+    isSpeaking = true; // Set speaking flag when TTS starts
+  };
+
+  utterance.onend = () => {
+    isSpeaking = false; // Reset speaking flag when TTS ends
+  };
+
   synth.speak(utterance);
 };
 
@@ -63,7 +74,7 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
       if (closestNodeId) {
         const nodeTouches = touchesByNode.current.get(closestNodeId);
 
-        if (nodeTouches?.secondTapPending) {
+        if (nodeTouches?.secondTapPending && !isSpeaking) {
           speakValue(nodeValue[infoIndex.current]);
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle through values
           nodeTouches.secondTapPending = false; // Reset pending state
@@ -83,3 +94,4 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     handleTouchEnd,
   };
 };
+
