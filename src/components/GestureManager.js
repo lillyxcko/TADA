@@ -1,3 +1,17 @@
+import { useRef } from 'react';
+
+const speakValue = (text) => {
+  const synth = window.speechSynthesis;
+  const utterance = new SpeechSynthesisUtterance(text);
+  synth.speak(utterance);
+};
+
+const getDistance = (touch1, touch2) => {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
 export const GestureManager = ({ nodeValue, infoIndex }) => {
   const touchesByNode = useRef(new Map());
 
