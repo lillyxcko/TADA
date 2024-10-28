@@ -28,7 +28,8 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         activeTouches.current.add(identifier);
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
-        gestureManager.handleTouchStart(id, touch); // Pass node id to handleTouchStart
+        gestureManager.handleTouchStart(id, touch);
+        gestureManager.handleSecondTouch(id, touch); // Check for valid second touch immediately
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
