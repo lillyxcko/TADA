@@ -7,13 +7,12 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   const circleRef = useRef(null); // Ref to circle element
   const [radius, setRadius] = useState(r); // State to handle radius
   const infoIndex = useRef(0); // Track which piece of info to announce
-  const isActive = useRef(false); // Track if this node is active
 
   const {
     handleTouchStart,
     handleSecondTouch,
     handleTouchEnd,
-  } = GestureManager({ nodeValue: value, infoIndex, r });
+  } = GestureManager({ nodeValue: value, infoIndex, r, id });
 
   const isInsideCircle = useCallback((touchX, touchY) => {
     const circle = circleRef.current.getBoundingClientRect();
@@ -31,7 +30,6 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
 
       if (isInsideCircle(clientX, clientY)) {
         activeTouches.current.add(identifier);
-        isActive.current = true; // Mark this node as active
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
         handleTouchStart(id, touch); // Register the touch with GestureManager
@@ -55,9 +53,8 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         setRadius(r);
       }
 
-      // Handle second touch validation for this node
       if (e.touches.length === 2) {
-        handleSecondTouch(id, e.touches[1]); // Pass the second touch to GestureManager
+        handleSecondTouch(id, e.touches[1]); // Handle second tap only for this node
       }
     }
   }, [id, pitch, r, isInsideCircle, handleSecondTouch]);
@@ -68,7 +65,6 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       activeTouches.current.delete(identifier);
 
       if (activeTouches.current.size === 0) {
-        isActive.current = false; // Mark this node as inactive
         SoundManager.stopNodeSound(id);
         setRadius(r);
       }

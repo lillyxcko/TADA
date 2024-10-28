@@ -12,22 +12,20 @@ const getDistance = (touch1, touch2) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-export const GestureManager = ({ nodeValue, infoIndex, r }) => {
-  const touchesByNode = useRef(new Map()); // Store touches per node
+export const GestureManager = ({ nodeValue, infoIndex, r, id }) => {
+  const touchesByNode = useRef(new Map()); // Track touches per node
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
       touchesByNode.current.set(nodeId, {
         firstTouch: touch,
         secondTapPending: false,
-        isFirstTouchInside: true,
       });
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
-    nodeTouches.firstTouch = touch; // Update first touch
-    nodeTouches.isFirstTouchInside = true; // Mark as inside
-    nodeTouches.secondTapPending = false; // Reset pending state
+    nodeTouches.firstTouch = touch; // Update the first touch
+    nodeTouches.secondTapPending = false; // Reset second tap state
     infoIndex.current = 0; // Reset TTS cycle on new touch
   };
 
@@ -35,28 +33,25 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch } = nodeTouches;
 
-    // Check if the second touch is within 200px of the first touch
+    // Check if the second tap is within 200px of the first touch
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 200) {
-      nodeTouches.secondTapPending = true; // Valid second tap detected
+      nodeTouches.secondTapPending = true;
     }
   };
 
   const handleTouchEnd = (nodeId, e) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
 
-    // Trigger TTS only if the second tap was valid
     if (nodeTouches?.secondTapPending) {
       speakValue(nodeValue[infoIndex.current]); // Announce current value
-
-      // Increment the index and wrap around if needed
-      infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+      infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle index
       nodeTouches.secondTapPending = false;
     }
 
-    // Clean up when no more active touches
+    // Clean up if no more active touches for this node
     if (e.touches.length === 0) {
       touchesByNode.current.delete(nodeId);
-      infoIndex.current = 0; // Reset index when all touches are lifted
+      infoIndex.current = 0;
     }
   };
 
