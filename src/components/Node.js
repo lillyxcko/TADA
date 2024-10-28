@@ -55,13 +55,9 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         setRadius(r);
       }
 
-      // Handle the second touch
+      // Handle second touch validation for this node
       if (e.touches.length === 2) {
-        // Pass the touch to GestureManager
-        for (let j = 0; j < e.touches.length; j++) {
-          const otherTouch = e.touches[j];
-          handleSecondTouch(id, otherTouch); // Pass the touch and node ID to GestureManager
-        }
+        handleSecondTouch(id, e.touches[1]); // Pass the second touch to GestureManager
       }
     }
   }, [id, pitch, r, isInsideCircle, handleSecondTouch]);

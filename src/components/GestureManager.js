@@ -25,7 +25,7 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
-    nodeTouches.firstTouch = touch; // Update firstTouch
+    nodeTouches.firstTouch = touch; // Update first touch
     nodeTouches.isFirstTouchInside = true; // Mark as inside
     nodeTouches.secondTapPending = false; // Reset pending state
     infoIndex.current = 0; // Reset TTS cycle on new touch
@@ -35,7 +35,7 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch } = nodeTouches;
 
-    // Check if second touch is close to the first touch of the node
+    // Check if the second touch is within 200px of the first touch
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 200) {
       nodeTouches.secondTapPending = true; // Valid second tap detected
     }
@@ -44,19 +44,19 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
   const handleTouchEnd = (nodeId, e) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
 
-    // Only trigger TTS if the second tap is valid and was detected
+    // Trigger TTS only if the second tap was valid
     if (nodeTouches?.secondTapPending) {
       speakValue(nodeValue[infoIndex.current]); // Announce current value
 
-      // Increment index, cycling if needed
+      // Increment the index and wrap around if needed
       infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
       nodeTouches.secondTapPending = false;
     }
 
-    // Clean up when no more touches
+    // Clean up when no more active touches
     if (e.touches.length === 0) {
       touchesByNode.current.delete(nodeId);
-      infoIndex.current = 0; // Reset index when all fingers are lifted
+      infoIndex.current = 0; // Reset index when all touches are lifted
     }
   };
 
