@@ -15,7 +15,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const effectiveRadius = r + 60;
+    const effectiveRadius = r + 60; // Adjust this radius as needed
     return distanceSquared < effectiveRadius ** 2;
   }, [r]);
 
@@ -29,7 +29,6 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
-        gestureManager.handleSecondTouch(id, touch); // Check for valid second touch immediately
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
@@ -44,15 +43,15 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         activeTouches.current.add(identifier);
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
-        gestureManager.handleTouchStart(id, touch); 
+        gestureManager.handleTouchStart(id, touch);
       } else if (!isInside && activeTouches.current.has(identifier)) {
         activeTouches.current.delete(identifier);
         SoundManager.stopNodeSound(id);
         setRadius(r);
       }
 
-      if (e.touches.length === 2) {
-        gestureManager.handleSecondTouch(id, e.touches[1]); // Pass node id to handleSecondTouch
+      if (activeTouches.current.has(identifier)) {
+        gestureManager.handleSecondTouch(id, touch); // Pass the current touch for second tap logic
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
@@ -62,6 +61,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       const { identifier } = e.changedTouches[i];
       activeTouches.current.delete(identifier);
 
+      // Stop sound if no active touches remain
       if (activeTouches.current.size === 0) {
         SoundManager.stopNodeSound(id);
         setRadius(r);
@@ -69,19 +69,6 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     }
     gestureManager.handleTouchEnd(e); // This handles TTS logic
   }, [id, r, gestureManager]);
-
-  useEffect(() => {
-    const handleDocumentTouchEnd = (e) => handleNodeTouchEnd(e);
-    const handleDocumentTouchMove = (e) => handleNodeTouchMove(e);
-
-    document.addEventListener('touchend', handleDocumentTouchEnd);
-    document.addEventListener('touchmove', handleDocumentTouchMove);
-
-    return () => {
-      document.removeEventListener('touchend', handleDocumentTouchEnd);
-      document.removeEventListener('touchmove', handleDocumentTouchMove);
-    };
-  }, [handleNodeTouchEnd, handleNodeTouchMove]);
 
   return (
     <circle
