@@ -1,101 +1,81 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { SoundManager } from './SoundManager';
-import { GestureManager } from './GestureManager';
+import { useRef } from 'react';
 
-const Node = ({ id, cx, cy, r, pitch, value }) => {
-  const activeTouches = useRef(new Set());
-  const circleRef = useRef(null);
-  const [radius, setRadius] = useState(r);
-  const infoIndex = useRef(0);
+let isSpeaking = false; // Global flag to track if TTS is currently speaking
 
-  const gestureManager = GestureManager({ nodeId: id, nodeValue: value, infoIndex, r });
+const speakValue = (text) => {
+  const synth = window.speechSynthesis;
+  const utterance = new SpeechSynthesisUtterance(text);
 
-  const isInsideCircle = useCallback((touchX, touchY) => {
-    const circle = circleRef.current.getBoundingClientRect();
-    const centerX = circle.left + circle.width / 2;
-    const centerY = circle.top + circle.height / 2;
-    const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const effectiveRadius = r + 60;
-    return distanceSquared < effectiveRadius ** 2;
-  }, [r]);
+  utterance.onstart = () => {
+    isSpeaking = true;
+  };
 
-  const handleNodeTouchStart = useCallback((e) => {
-    for (let i = 0; i < e.touches.length; i++) {
-      const touch = e.touches[i];
-      const { clientX, clientY, identifier } = touch;
+  utterance.onend = () => {
+    isSpeaking = false;
+  };
 
-      if (isInsideCircle(clientX, clientY)) {
-        activeTouches.current.add(identifier);
-        SoundManager.startNodeSound(id, pitch);
-        setRadius(r + 10);
-        gestureManager.handleTouchStart(id, touch);
-        gestureManager.handleSecondTouch(id, touch); // Check for valid second touch immediately
-      }
-    }
-  }, [id, pitch, r, isInsideCircle, gestureManager]);
-
-  const handleNodeTouchMove = useCallback((e) => {
-    for (let i = 0; i < e.touches.length; i++) {
-      const touch = e.touches[i];
-      const { clientX, clientY, identifier } = touch;
-      const isInside = isInsideCircle(clientX, clientY);
-
-      if (isInside && !activeTouches.current.has(identifier)) {
-        activeTouches.current.add(identifier);
-        SoundManager.startNodeSound(id, pitch);
-        setRadius(r + 10);
-        gestureManager.handleTouchStart(id, touch); 
-      } else if (!isInside && activeTouches.current.has(identifier)) {
-        activeTouches.current.delete(identifier);
-        SoundManager.stopNodeSound(id);
-        setRadius(r);
-      }
-
-      if (e.touches.length === 2) {
-        gestureManager.handleSecondTouch(id, e.touches[1]); // Pass node id to handleSecondTouch
-      }
-    }
-  }, [id, pitch, r, isInsideCircle, gestureManager]);
-
-  const handleNodeTouchEnd = useCallback((e) => {
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      const { identifier } = e.changedTouches[i];
-      activeTouches.current.delete(identifier);
-
-      if (activeTouches.current.size === 0) {
-        SoundManager.stopNodeSound(id);
-        setRadius(r);
-      }
-    }
-    gestureManager.handleTouchEnd(e); // This handles TTS logic
-  }, [id, r, gestureManager]);
-
-  useEffect(() => {
-    const handleDocumentTouchEnd = (e) => handleNodeTouchEnd(e);
-    const handleDocumentTouchMove = (e) => handleNodeTouchMove(e);
-
-    document.addEventListener('touchend', handleDocumentTouchEnd);
-    document.addEventListener('touchmove', handleDocumentTouchMove);
-
-    return () => {
-      document.removeEventListener('touchend', handleDocumentTouchEnd);
-      document.removeEventListener('touchmove', handleDocumentTouchMove);
-    };
-  }, [handleNodeTouchEnd, handleNodeTouchMove]);
-
-  return (
-    <circle
-      ref={circleRef}
-      cx={cx}
-      cy={cy}
-      r={radius}
-      fill="lightblue"
-      onTouchStart={handleNodeTouchStart}
-      onTouchEnd={handleNodeTouchEnd}
-      onTouchMove={handleNodeTouchMove}
-      style={{ cursor: 'pointer', transition: 'r 0.2s ease' }}
-    />
-  );
+  synth.speak(utterance);
 };
 
-export default Node;
+const getDistance = (touch1, touch2) => {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+export const GestureManager = ({ nodeValue, infoIndex, r }) => {
+  const touchesByNode = useRef(new Map());
+
+  const handleTouchStart = (nodeId, touch) => {
+    if (!touchesByNode.current.has(nodeId)) {
+      touchesByNode.current.set(nodeId, {
+        firstTouch: touch,
+        secondTapPending: false,
+        isActiveTouch: true,
+      });
+    }
+    const nodeTouches = touchesByNode.current.get(nodeId);
+    nodeTouches.firstTouch = touch;
+    nodeTouches.secondTapPending = false;
+    infoIndex.current = 0;
+  };
+
+  const handleSecondTouch = (nodeId, secondTouch) => {
+    const nodeTouches = touchesByNode.current.get(nodeId);
+    if (nodeTouches) {
+      const { firstTouch } = nodeTouches;
+      if (firstTouch && getDistance(firstTouch, secondTouch) <= 200) {
+        nodeTouches.secondTapPending = true;
+      }
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+
+      touchesByNode.current.forEach((nodeTouches, nodeId) => {
+        const { firstTouch, secondTapPending } = nodeTouches;
+        if (firstTouch && getDistance(firstTouch, touch) <= 200 && secondTapPending && !isSpeaking) {
+          speakValue(nodeValue[infoIndex.current]);
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+          nodeTouches.secondTapPending = false;
+        }
+      });
+    }
+
+    if (e.touches.length === 0) {
+      touchesByNode.current.forEach((nodeTouches) => {
+        nodeTouches.isActiveTouch = false;
+      });
+      touchesByNode.current.clear();
+      infoIndex.current = 0;
+    }
+  };
+
+  return {
+    handleTouchStart,
+    handleSecondTouch,
+    handleTouchEnd,
+  };
+};
