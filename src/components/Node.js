@@ -44,7 +44,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         SoundManager.stopNodeSound(id);
         setRadius(r);
       }
-      if (e.touches.length === 2) {
+      if (e.touches.length >= 2) {
         gestureManager.handleSecondTouch(id, e.touches[1]);
       }
     }
