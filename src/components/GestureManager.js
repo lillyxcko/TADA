@@ -39,11 +39,7 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     const distance = getDistance(firstTouch, secondTouch);
 
     if (distance <= 200) {
-      if (!nodeTouches.isSpeaking) {
-        speakValue(nodeValue[infoIndex.current], nodeId);
-        infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-        nodeTouches.secondTapPending = false;  // Reset after TTS is triggered
-      }
+      nodeTouches.secondTapPending = true;
     }
   };
 
@@ -54,13 +50,14 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
 
       if (closestNodeId) {
         const nodeTouches = touchesByNode.current.get(closestNodeId);
-        if (nodeTouches?.isActiveTouch) {
-          nodeTouches.isActiveTouch = false;
+        if (nodeTouches?.isActiveTouch && nodeTouches.secondTapPending && !nodeTouches.isSpeaking) {
+          speakValue(nodeValue[infoIndex.current], closestNodeId);
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+          nodeTouches.secondTapPending = false;
         }
       }
     }
 
-    // Clear state when all touches are removed
     if (e.touches.length === 0) {
       touchesByNode.current.forEach((nodeTouches) => {
         nodeTouches.isActiveTouch = false;
