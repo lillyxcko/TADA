@@ -23,7 +23,7 @@ const getDistance = (touch1, touch2) => {
 
 export const GestureManager = ({ nodeValue, infoIndex, r }) => {
   const touchesByNode = useRef(new Map());
-  const isSpeakingByNode = useRef(new Map()); // Tracks TTS activity per node
+  const isSpeakingByNode = useRef(new Map());
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
@@ -32,7 +32,7 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
         secondTapPending: false,
         isActiveTouch: true,
       });
-      isSpeakingByNode.current.set(nodeId, false); // Initialize TTS state for this node
+      isSpeakingByNode.current.set(nodeId, false); 
     }
     const nodeTouches = touchesByNode.current.get(nodeId);
     nodeTouches.firstTouch = touch;
@@ -44,8 +44,15 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     if (nodeTouches) {
       const { firstTouch } = nodeTouches;
-      if (firstTouch && getDistance(firstTouch, secondTouch) <= 200) {
-        nodeTouches.secondTapPending = true;
+      if (
+        firstTouch &&
+        getDistance(firstTouch, secondTouch) <= 200 &&
+        !isSpeakingByNode.current.get(nodeId)
+      ) {
+        // Trigger TTS immediately upon detecting valid second touch
+        speakValue(nodeId, nodeValue[infoIndex.current], isSpeakingByNode);
+        infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+        nodeTouches.secondTapPending = false; // Reset the pending flag
       }
     }
   };
@@ -53,25 +60,14 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
   const handleTouchEnd = (e) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
       const touch = e.changedTouches[i];
-
-      touchesByNode.current.forEach((nodeTouches, nodeId) => {
-        const { firstTouch, secondTapPending } = nodeTouches;
-
-        // Check if this node can trigger TTS independently
-        if (
-          firstTouch &&
-          getDistance(firstTouch, touch) <= 200 &&
-          secondTapPending &&
-          !isSpeakingByNode.current.get(nodeId)
-        ) {
-          speakValue(nodeId, nodeValue[infoIndex.current], isSpeakingByNode);
-          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+      touchesByNode.current.forEach((nodeTouches) => {
+        if (nodeTouches.firstTouch && getDistance(nodeTouches.firstTouch, touch) <= 200) {
           nodeTouches.secondTapPending = false;
         }
       });
     }
 
-    // Clear touches when no more fingers are touching the screen
+    // Clear touches when no fingers remain
     if (e.touches.length === 0) {
       touchesByNode.current.forEach((nodeTouches) => {
         nodeTouches.isActiveTouch = false;
