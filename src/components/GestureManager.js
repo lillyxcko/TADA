@@ -1,29 +1,23 @@
 import { useRef } from 'react';
 
-let isSpeaking = false; // Global flag to track if TTS is currently speaking
+let isSpeaking = false;
 
 const speakValue = (text) => {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
 
   utterance.onstart = () => {
-    isSpeaking = true; // Set speaking flag when TTS starts
+    isSpeaking = true;
   };
 
   utterance.onend = () => {
-    isSpeaking = false; // Reset speaking flag when TTS ends
+    isSpeaking = false;
   };
 
   synth.speak(utterance);
 };
 
-const getDistance = (touch1, touch2) => {
-  const dx = touch1.clientX - touch2.clientX;
-  const dy = touch1.clientY - touch2.clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-};
-
-export const GestureManager = ({ nodeValue, infoIndex, r }) => {
+export const GestureManager = ({ nodeId, nodeValue, infoIndex }) => {
   const touchesByNode = useRef(new Map());
 
   const handleTouchStart = (nodeId, touch) => {
@@ -31,72 +25,37 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
       touchesByNode.current.set(nodeId, {
         firstTouch: touch,
         secondTapPending: false,
-        isActiveTouch: true, // Mark node as having an active touch
       });
     }
-
-    const nodeTouches = touchesByNode.current.get(nodeId);
-    nodeTouches.firstTouch = touch;
-    nodeTouches.secondTapPending = false; // Reset state on new touch
-    infoIndex.current = 0; // Reset TTS index
+    touchesByNode.current.get(nodeId).firstTouch = touch;
+    infoIndex.current = 0;
   };
 
   const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
-    const { firstTouch } = nodeTouches;
-
-    if (firstTouch && getDistance(firstTouch, secondTouch) <= 200) {
-      nodeTouches.secondTapPending = true; // Mark second tap as pending
+    if (getDistance(nodeTouches.firstTouch, secondTouch) <= 200) {
+      nodeTouches.secondTapPending = true;
     }
-  };
-
-  const findClosestNodeWithinRange = (touch) => {
-    let closestNodeId = null;
-    let minDistance = 200;
-
-    touchesByNode.current.forEach((nodeTouches, nodeId) => {
-      const { firstTouch } = nodeTouches;
-      const distance = getDistance(firstTouch, touch);
-
-      if (distance <= 200 && distance < minDistance) {
-        closestNodeId = nodeId;
-        minDistance = distance;
-      }
-    });
-
-    return closestNodeId;
   };
 
   const handleTouchEnd = (e) => {
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      const touch = e.changedTouches[i];
+    e.changedTouches.forEach((touch) => {
       const closestNodeId = findClosestNodeWithinRange(touch);
-
       if (closestNodeId) {
         const nodeTouches = touchesByNode.current.get(closestNodeId);
-
-        // Only trigger TTS if there is an active touch and second tap is pending
-        if (nodeTouches?.isActiveTouch && nodeTouches.secondTapPending && !isSpeaking) {
+        if (nodeTouches?.secondTapPending && !isSpeaking) {
           speakValue(nodeValue[infoIndex.current]);
-          infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle through values
-          nodeTouches.secondTapPending = false; // Reset pending state
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+          nodeTouches.secondTapPending = false;
         }
       }
-    }
+    });
 
     if (e.touches.length === 0) {
-      // Reset the state when all touches end
-      touchesByNode.current.forEach((nodeTouches) => {
-        nodeTouches.isActiveTouch = false; // Reset active touch tracking
-      });
       touchesByNode.current.clear();
-      infoIndex.current = 0; // Reset TTS index
+      infoIndex.current = 0;
     }
   };
 
-  return {
-    handleTouchStart,
-    handleSecondTouch,
-    handleTouchEnd,
-  };
+  return { handleTouchStart, handleSecondTouch, handleTouchEnd };
 };
