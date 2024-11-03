@@ -23,15 +23,16 @@ const getDistance = (touch1, touch2) => {
 
 export const GestureManager = ({ nodeValue, infoIndex, r }) => {
   const touchesByNode = useRef(new Map());
-  const isSpeakingByNode = useRef(new Map());
+  const isSpeakingByNode = useRef(new Map()); // Tracks TTS activity per node
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
       touchesByNode.current.set(nodeId, {
         firstTouch: touch,
         secondTapPending: false,
+        isActiveTouch: true,
       });
-      isSpeakingByNode.current.set(nodeId, false);
+      isSpeakingByNode.current.set(nodeId, false); // Initialize TTS state for this node
     }
     const nodeTouches = touchesByNode.current.get(nodeId);
     nodeTouches.firstTouch = touch;
@@ -56,7 +57,7 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
       touchesByNode.current.forEach((nodeTouches, nodeId) => {
         const { firstTouch, secondTapPending } = nodeTouches;
 
-        // Trigger TTS if the first touch is active and the second tap is within range
+        // Check if this node can trigger TTS independently
         if (
           firstTouch &&
           getDistance(firstTouch, touch) <= 200 &&
@@ -70,8 +71,11 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
       });
     }
 
-    // Don't clear touches immediately; allow for multiple nodes to manage their states
+    // Clear touches when no more fingers are touching the screen
     if (e.touches.length === 0) {
+      touchesByNode.current.forEach((nodeTouches) => {
+        nodeTouches.isActiveTouch = false;
+      });
       touchesByNode.current.clear();
       infoIndex.current = 0;
     }
