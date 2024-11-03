@@ -1,5 +1,4 @@
 import { useRef } from 'react';
-import { TextToSpeechManager } from './TextToSpeechManager';
 
 // GestureManager to manage multiple nodes independently
 export function GestureManager({ nodeId, nodeValue, infoIndex, radius, center }) {
