@@ -1,79 +1,108 @@
 import { useRef } from 'react';
 
-// GestureManager to manage multiple nodes independently
-export function GestureManager({ nodeId, nodeValue, infoIndex, radius, center }) {
-  const activeTouches = useRef(new Map()); // Track active touches for each node by ID
-  const activeTTS = useRef(false); // Track TTS lock for non-stacking TTS
-  
-  // Handle the start of a touch on a node
-  function handleTouchStart(nodeId, touch) {
-    if (!activeTouches.current.has(nodeId)) {
-      activeTouches.current.set(nodeId, new Set());
-    }
-    activeTouches.current.get(nodeId).add(touch.identifier); // Add touch by ID
-  }
+let isSpeaking = false; // Global flag to track if TTS is currently speaking
 
-  // Handle adjacent taps within a 200px radius of the node’s center
-  function handleAdjacentTap(nodeId, touch) {
-    const touchPoint = { x: touch.clientX, y: touch.clientY };
-    const distance = getDistance(center, touchPoint);
-    
-    // Only trigger TTS if within 200px and TTS is not active
-    if (distance <= 200 && !activeTTS.current) {
-      activeTTS.current = true; // Lock TTS for non-stacking
-      const value = nodeValue[infoIndex.current]; // Get current value to announce
-      
-      // Speak the value and release the lock once done
-      TextToSpeechManager.speak(value, () => {
-        activeTTS.current = false; // Unlock TTS after completion
+const speakValue = (text) => {
+  const synth = window.speechSynthesis;
+  const utterance = new SpeechSynthesisUtterance(text);
+
+  utterance.onstart = () => {
+    isSpeaking = true; // Set speaking flag when TTS starts
+  };
+
+  utterance.onend = () => {
+    isSpeaking = false; // Reset speaking flag when TTS ends
+  };
+
+  synth.speak(utterance);
+};
+
+const getDistance = (touch1, touch2) => {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+// GestureManager to handle independent multi-touch interactions per node
+export const GestureManager = ({ nodeValue, infoIndex, r }) => {
+  const touchesByNode = useRef(new Map()); // Track touches and states by node
+
+  const handleTouchStart = (nodeId, touch) => {
+    // Initialize touch state for a node if not present
+    if (!touchesByNode.current.has(nodeId)) {
+      touchesByNode.current.set(nodeId, {
+        firstTouch: touch,
+        secondTapPending: false,
+        isActiveTouch: true,
       });
-      
-      // Cycle to the next value in the array
-      infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
     }
-  }
 
-  // Handle movement within the node’s area; keep track of whether it’s still in range
-  function handleTouchMove(nodeId, touch) {
-    const touchPoint = { x: touch.clientX, y: touch.clientY };
-    const distance = getDistance(center, touchPoint);
+    // Set or reset touch states
+    const nodeTouches = touchesByNode.current.get(nodeId);
+    nodeTouches.firstTouch = touch;
+    nodeTouches.secondTapPending = false; // Reset pending second tap state
+    infoIndex.current = 0; // Reset index for TTS cycling
+  };
 
-    if (distance > radius + 60) {
-      // If the touch moves out of the node range, stop sound and remove touch
-      activeTouches.current.get(nodeId).delete(touch.identifier);
-      if (activeTouches.current.get(nodeId).size === 0) {
-        // If no active touches remain for the node, reset TTS and sound
-        SoundManager.stopNodeSound(nodeId);
-        infoIndex.current = 0; // Reset cycle index
+  const handleSecondTouch = (nodeId, secondTouch) => {
+    const nodeTouches = touchesByNode.current.get(nodeId);
+    const { firstTouch } = nodeTouches;
+
+    // Check if second touch is within 200px of the first touch
+    if (firstTouch && getDistance(firstTouch, secondTouch) <= 200) {
+      nodeTouches.secondTapPending = true; // Mark second tap as pending
+    }
+  };
+
+  const findClosestNodeWithinRange = (touch) => {
+    let closestNodeId = null;
+    let minDistance = 200;
+
+    // Find the closest node within a 200px range
+    touchesByNode.current.forEach((nodeTouches, nodeId) => {
+      const { firstTouch } = nodeTouches;
+      const distance = getDistance(firstTouch, touch);
+
+      if (distance <= 200 && distance < minDistance) {
+        closestNodeId = nodeId;
+        minDistance = distance;
+      }
+    });
+
+    return closestNodeId;
+  };
+
+  const handleTouchEnd = (e) => {
+    // Iterate over all ended touches
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      const closestNodeId = findClosestNodeWithinRange(touch);
+
+      if (closestNodeId) {
+        const nodeTouches = touchesByNode.current.get(closestNodeId);
+
+        // Trigger TTS only if there's an active touch and a pending second tap
+        if (nodeTouches?.isActiveTouch && nodeTouches.secondTapPending && !isSpeaking) {
+          speakValue(nodeValue[infoIndex.current]);
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Cycle to the next value
+          nodeTouches.secondTapPending = false; // Reset pending tap state
+        }
       }
     }
-  }
 
-  // Handle the end of a touch
-  function handleTouchEnd(nodeId, touch) {
-    if (activeTouches.current.has(nodeId)) {
-      activeTouches.current.get(nodeId).delete(touch.identifier);
-      
-      // If all touches are lifted, stop sound and reset cycle index
-      if (activeTouches.current.get(nodeId).size === 0) {
-        SoundManager.stopNodeSound(nodeId);
-        infoIndex.current = 0; // Reset cycle index on full lift
-        activeTouches.current.delete(nodeId); // Remove the node from active tracking
-      }
+    // If no active touches remain, reset states
+    if (e.touches.length === 0) {
+      touchesByNode.current.forEach((nodeTouches) => {
+        nodeTouches.isActiveTouch = false; // Mark no active touch on node
+      });
+      touchesByNode.current.clear(); // Clear all touch tracking
+      infoIndex.current = 0; // Reset TTS index
     }
-  }
+  };
 
   return {
     handleTouchStart,
-    handleAdjacentTap,
-    handleTouchMove,
+    handleSecondTouch,
     handleTouchEnd,
   };
-}
-
-// Utility function to calculate distance between two points
-function getDistance(point1, point2) {
-  const dx = point1.x - point2.x;
-  const dy = point1.y - point2.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}
+};
