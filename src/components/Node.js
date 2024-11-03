@@ -8,13 +8,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   const [radius, setRadius] = useState(r);
   const infoIndex = useRef(0);
 
-  const gestureManager = GestureManager({ 
-    nodeId: id, 
-    nodeValue: value, 
-    infoIndex, 
-    radius: r, 
-    center: { x: cx, y: cy } // Pass center position for distance calculation
-  });
+  const gestureManager = GestureManager({ nodeId: id, nodeValue: value, infoIndex, r });
 
   const isInsideCircle = useCallback((touchX, touchY) => {
     const circle = circleRef.current.getBoundingClientRect();
@@ -35,7 +29,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
-        gestureManager.handleAdjacentTap(id, touch); // Initial adjacent tap check
+        gestureManager.handleSecondTouch(id, touch); // Check for valid second touch immediately
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
@@ -57,7 +51,9 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         setRadius(r);
       }
 
-      gestureManager.handleAdjacentTap(id, touch); // Handle adjacent tap
+      if (e.touches.length === 2) {
+        gestureManager.handleSecondTouch(id, e.touches[1]); // Pass node id to handleSecondTouch
+      }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
 
@@ -69,10 +65,9 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       if (activeTouches.current.size === 0) {
         SoundManager.stopNodeSound(id);
         setRadius(r);
-        infoIndex.current = 0; // Reset cycle index when all touches are lifted
       }
     }
-    gestureManager.handleTouchEnd(id); // Check for mid-TTS handling
+    gestureManager.handleTouchEnd(e); // This handles TTS logic
   }, [id, r, gestureManager]);
 
   useEffect(() => {
