@@ -99,7 +99,6 @@ const Diagram = () => {
           r={node.r}
           pitch={node.pitch}
           value={node.value}
-          nodes={nodes}
         />
       ))}
     </svg>
