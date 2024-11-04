@@ -59,15 +59,15 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
     const closestNode = findClosestNodeWithinRange(secondTouch);
 
     if (closestNode && touchesByNode.current.has(closestNode)) {
-      const { secondTapPending } = touchesByNode.current.get(closestNode);
-      if (secondTapPending && !isSpeaking) {
-        const textToSpeak = nodeValue[infoIndex.current];
-        speakValue(textToSpeak);
-        infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-      }
-      touchesByNode.current.get(closestNode).secondTapPending = false;
+        const { secondTapPending } = touchesByNode.current.get(closestNode);
+        if (secondTapPending && !isSpeaking) {
+            const textToSpeak = nodeValue[infoIndex.current];
+            speakValue(textToSpeak);
+            infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Increment index
+        }
+        touchesByNode.current.get(closestNode).secondTapPending = false;
     }
-  };
+};
 
   return { handleTouchStart, handleTouchEnd, handleSecondTouch };
 };
