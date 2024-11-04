@@ -58,7 +58,7 @@ const Node = ({ id, cx, cy, r, pitch, value, nodes}) => {
           const distance = getDistance({ clientX: node.cx, clientY: node.cy }, { clientX: touch.clientX, clientY: touch.clientY });
 
           // If the touch is within 200px of the active node, call handleSecondTouch
-          if (distance <= 500) {
+          if (distance <= 200) {
             gestureManager.handleSecondTouch(node.id, touch);
           }
         }
