@@ -27,43 +27,37 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
 
   const handleNodeTouchStart = useCallback((e) => {
     for (let i = 0; i < e.touches.length; i++) {
-        const touch = e.touches[i];
-        if (isInsideCircle(touch.clientX, touch.clientY)) {
-            activeTouches.current.add(touch.identifier);
-            SoundManager.startNodeSound(id, pitch);
-            setRadius(r + 10);
-            gestureManager.handleTouchStart(id, touch);
-            isHolding.current = true; // Mark the node as being held
-            gestureManager.handleSecondTouch(id, touch); // Still call but after marking hold
-        }
+      const touch = e.touches[i];
+      if (isInsideCircle(touch.clientX, touch.clientY)) {
+        activeTouches.current.add(touch.identifier);
+        SoundManager.startNodeSound(id, pitch);
+        setRadius(r + 10);
+        gestureManager.handleTouchStart(id, touch);
+        isHolding.current = true; // Mark the node as being held
+        gestureManager.handleSecondTouch(id, touch);
+      }
     }
-}, [id, pitch, r, isInsideCircle, gestureManager]);
+  }, [id, pitch, r, isInsideCircle, gestureManager]);
 
   const handleNodeTouchMove = useCallback((e) => {
     for (let i = 0; i < e.touches.length; i++) {
       const touch = e.touches[i];
       const { clientX, clientY, identifier } = touch;
       const isInside = isInsideCircle(clientX, clientY);
-  
-      // Check if the touch is entering the node area
+
       if (isInside && !activeTouches.current.has(identifier)) {
         activeTouches.current.add(identifier);
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
-      } 
-      // Check if the touch is exiting the node area
-      else if (!isInside && activeTouches.current.has(identifier)) {
+      } else if (!isInside && activeTouches.current.has(identifier)) {
         activeTouches.current.delete(identifier);
         SoundManager.stopNodeSound(id);
         setRadius(r);
       }
-  
-      // If there are two or more active touches, check their distances
+
       if (activeTouches.current.size >= 2) {
-        const activeTouchesArray = Array.from(activeTouches.current); // Convert the Set to an array
-        
-        // Check proximity for each active touch
+        const activeTouchesArray = Array.from(activeTouches.current);
         for (const activeTouchId of activeTouchesArray) {
           const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
           if (activeTouch) {
@@ -71,10 +65,9 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
               { clientX: activeTouch.clientX, clientY: activeTouch.clientY }, 
               { clientX: clientX, clientY: clientY }
             );
-  
-            // If the current touch is within 200px of any active touch, trigger handleSecondTouch
+
             if (distance <= 200) {
-              gestureManager.handleSecondTouch(id, touch); // Pass the current touch
+              gestureManager.handleSecondTouch(id, touch);
               break; // Exit the loop once a valid touch has been found
             }
           }
@@ -85,18 +78,18 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
 
   const handleNodeTouchEnd = useCallback((e) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
-        const { identifier } = e.changedTouches[i];
-        activeTouches.current.delete(identifier);
+      const { identifier } = e.changedTouches[i];
+      activeTouches.current.delete(identifier);
 
-        if (activeTouches.current.size === 0) {
-            SoundManager.stopNodeSound(id);
-            setRadius(r);
-            isHolding.current = false; // Mark the node as not being held
-            infoIndex.current = 0; // Reset index when the touch ends
-        }
+      if (activeTouches.current.size === 0) {
+        SoundManager.stopNodeSound(id);
+        setRadius(r);
+        isHolding.current = false; // Mark the node as not being held
+        infoIndex.current = 0; // Reset index when the touch ends
+      }
     }
     gestureManager.handleTouchEnd(e); // Ensure TTS logic is handled
-}, [id, r, gestureManager]);
+  }, [id, r, gestureManager]);
 
   useEffect(() => {
     document.addEventListener('touchend', handleNodeTouchEnd);
