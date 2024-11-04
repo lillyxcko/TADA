@@ -44,10 +44,9 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         SoundManager.stopNodeSound(id);
         setRadius(r);
       }
-      const nodeTouches = touchesByNode.current.get(id);
-        if (nodeTouches && getDistance(nodeTouches.firstTouch, touch) <= 200) {
-            gestureManager.handleSecondTouch(id, touch);
-      }
+      
+        gestureManager.handleSecondTouch(id, e.touches[1]);
+      
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
 
