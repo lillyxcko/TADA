@@ -2,6 +2,12 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { SoundManager } from './SoundManager';
 import { GestureManager } from './GestureManager';
 
+const getDistance = (touch1, touch2) => {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
 const Node = ({ id, cx, cy, r, pitch, value }) => {
   const activeTouches = useRef(new Set());
   const circleRef = useRef(null);
