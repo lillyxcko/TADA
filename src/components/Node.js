@@ -13,6 +13,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   const circleRef = useRef(null);
   const [radius, setRadius] = useState(r);
   const infoIndex = useRef(0);
+  const isHolding = useRef(false); // Track whether the node is being held
   const gestureManager = GestureManager({ nodeId: id, nodeValue: value, infoIndex, r });
 
   const isInsideCircle = useCallback((touchX, touchY) => {
