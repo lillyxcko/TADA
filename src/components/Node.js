@@ -34,6 +34,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   const handleNodeTouchMove = useCallback((e) => {
     for (let i = 0; i < e.touches.length; i++) {
       const touch = e.touches[i];
+  
       if (isInsideCircle(touch.clientX, touch.clientY) && !activeTouches.current.has(touch.identifier)) {
         activeTouches.current.add(touch.identifier);
         SoundManager.startNodeSound(id, pitch);
@@ -44,9 +45,18 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         SoundManager.stopNodeSound(id);
         setRadius(r);
       }
-      
-        gestureManager.handleSecondTouch(id, e.touches[1]);
-      
+  
+      // Check each touch for proximity to the active touch on this node
+      if (activeTouches.current.size > 1) {
+        const activeTouch = [...activeTouches.current][0]; // First active touch on this node
+        const currentTouch = e.touches[i];
+        const distance = getDistance(activeTouch, currentTouch);
+  
+        // Trigger handleSecondTouch if the current touch is within 200px of the active touch
+        if (distance <= 200) {
+          gestureManager.handleSecondTouch(id, currentTouch);
+        }
+      }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
 
