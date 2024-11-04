@@ -8,7 +8,7 @@ const getDistance = (touch1, touch2) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-const Node = ({ id, cx, cy, r, pitch, value }) => {
+const Node = ({ id, cx, cy, r, pitch, value, nodes}) => {
   const activeTouches = useRef(new Set());
   const circleRef = useRef(null);
   const [radius, setRadius] = useState(r);
@@ -37,10 +37,12 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
 
+
   const handleNodeTouchMove = useCallback((e) => {
     for (let i = 0; i < e.touches.length; i++) {
       const touch = e.touches[i];
-  
+      
+      // Check if the touch is inside the current node
       if (isInsideCircle(touch.clientX, touch.clientY) && !activeTouches.current.has(touch.identifier)) {
         activeTouches.current.add(touch.identifier);
         SoundManager.startNodeSound(id, pitch);
@@ -51,18 +53,16 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         SoundManager.stopNodeSound(id);
         setRadius(r);
       }
-  
-      // Check each touch for proximity to the active touch on this node
-      if (activeTouches.current.size > 1) {
-        const activeTouch = [...activeTouches.current][0]; // First active touch on this node
-        const currentTouch = e.touches[i];
-        const distance = getDistance(activeTouch, currentTouch);
-  
-        // Trigger handleSecondTouch if the current touch is within 200px of the active touch
-        if (distance <= 200) {
-          gestureManager.handleSecondTouch(id, currentTouch);
+      nodes.forEach(node => {
+        if (activeTouches.current.has(node.id)) {
+          const distance = getDistance({ clientX: node.cx, clientY: node.cy }, { clientX: touch.clientX, clientY: touch.clientY });
+
+          // If the touch is within 200px of the active node, call handleSecondTouch
+          if (distance <= 200) {
+            gestureManager.handleSecondTouch(node.id, touch);
+          }
         }
-      }
+      });
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
 
