@@ -1,28 +1,27 @@
-// gesturemanager.js
 import { useRef } from 'react';
 
-const speakValue = (text, nodeId) => {
+let isSpeaking = false;
+
+const speakValue = (text) => {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
-
-  // Track speaking status per node, not globally
-  utterance.onstart = () => (touchesByNode.current.get(nodeId).isSpeaking = true);
-  utterance.onend = () => (touchesByNode.current.get(nodeId).isSpeaking = false);
-
+  utterance.onstart = () => isSpeaking = true;
+  utterance.onend = () => isSpeaking = false;
   synth.speak(utterance);
 };
 
-export const GestureManager = ({ nodeValue, infoIndex, r }) => {
+const getDistance = (touch1, touch2) => {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
   const touchesByNode = useRef(new Map());
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
-      touchesByNode.current.set(nodeId, {
-        firstTouch: touch,
-        secondTapPending: false,
-        isActiveTouch: true,
-        isSpeaking: false,
-      });
+      touchesByNode.current.set(nodeId, { firstTouch: touch, secondTapPending: false, isActiveTouch: true });
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
@@ -33,43 +32,40 @@ export const GestureManager = ({ nodeValue, infoIndex, r }) => {
 
   const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
-    if (!nodeTouches || nodeTouches.isSpeaking) return;
-
-    const { firstTouch } = nodeTouches;
-    const distance = getDistance(firstTouch, secondTouch);
-
-    if (distance <= 200) {
+    if (nodeTouches && getDistance(nodeTouches.firstTouch, secondTouch) <= 200) {
       nodeTouches.secondTapPending = true;
     }
   };
 
-  const handleTouchEnd = (e) => {
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      const touch = e.changedTouches[i];
-      const closestNodeId = findClosestNodeWithinRange(touch);
+  const findClosestNodeWithinRange = (touch) => {
+    let closestNodeId = null;
+    let minDistance = 200;
 
-      if (closestNodeId) {
-        const nodeTouches = touchesByNode.current.get(closestNodeId);
-        if (nodeTouches?.isActiveTouch && nodeTouches.secondTapPending && !nodeTouches.isSpeaking) {
-          speakValue(nodeValue[infoIndex.current], closestNodeId);
-          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-          nodeTouches.secondTapPending = false;
-        }
+    touchesByNode.current.forEach((nodeTouches, nodeId) => {
+      if (!nodeTouches.isActiveTouch) return;
+      const dist = getDistance(nodeTouches.firstTouch, touch);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestNodeId = nodeId;
       }
-    }
+    });
+    return closestNodeId;
+  };
 
-    if (e.touches.length === 0) {
-      touchesByNode.current.forEach((nodeTouches) => {
-        nodeTouches.isActiveTouch = false;
-      });
-      touchesByNode.current.clear();
-      infoIndex.current = 0;
+  const handleTouchEnd = (e) => {
+    const secondTouch = e.changedTouches[0];
+    const closestNode = findClosestNodeWithinRange(secondTouch);
+
+    if (closestNode && touchesByNode.current.has(closestNode)) {
+      const { secondTapPending } = touchesByNode.current.get(closestNode);
+      if (secondTapPending && !isSpeaking) {
+        const textToSpeak = nodeValue[infoIndex.current];
+        speakValue(textToSpeak);
+        infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+      }
+      touchesByNode.current.get(closestNode).secondTapPending = false;
     }
   };
 
-  return {
-    handleTouchStart,
-    handleSecondTouch,
-    handleTouchEnd,
-  };
+  return { handleTouchStart, handleTouchEnd, handleSecondTouch };
 };
