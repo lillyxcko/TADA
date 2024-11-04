@@ -32,20 +32,15 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
 
   const handleSecondTouch = (nodeId, currentTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
-    if (nodeTouches && getDistance(nodeTouches.firstTouch, currentTouch) <= 200 && !isSpeaking) {
-      // Directly speak the value if within range and TTS is not already active
-      const textToSpeak = nodeValue[infoIndex.current];
-      speakValue(textToSpeak);
-      
-      // Cycle through the node's values for the next tap
-      infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+    if (nodeTouches && getDistance(nodeTouches.firstTouch, currentTouch) <= 200) {
+      nodeTouches.secondTapPending = true;
     }
   };
-  
+
   const findClosestNodeWithinRange = (touch) => {
     let closestNodeId = null;
     let minDistance = 200;
-  
+
     touchesByNode.current.forEach((nodeTouches, nodeId) => {
       if (!nodeTouches.isActiveTouch) return;
       const dist = getDistance(nodeTouches.firstTouch, touch);
@@ -58,18 +53,17 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
   };
 
   const handleTouchEnd = (e) => {
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      const endedTouch = e.changedTouches[i];
-      const closestNode = findClosestNodeWithinRange(endedTouch);
-  
-      if (closestNode && touchesByNode.current.has(closestNode)) {
-        const nodeTouches = touchesByNode.current.get(closestNode);
-        
-        // Clean up only if the ended touch was the first active touch
-        if (nodeTouches.firstTouch.identifier === endedTouch.identifier) {
-          touchesByNode.current.delete(closestNode); // Remove the node from active touches
-        }
+    const secondTouch = e.changedTouches[0];
+    const closestNode = findClosestNodeWithinRange(secondTouch);
+
+    if (closestNode && touchesByNode.current.has(closestNode)) {
+      const { secondTapPending } = touchesByNode.current.get(closestNode);
+      if (secondTapPending && !isSpeaking) {
+        const textToSpeak = nodeValue[infoIndex.current];
+        speakValue(textToSpeak);
+        infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
       }
+      touchesByNode.current.get(closestNode).secondTapPending = false;
     }
   };
 
