@@ -33,7 +33,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch } = nodeTouches;
 
-    if (firstTouch && getDistance(firstTouch, secondTouch) <= 200) {
+    if (firstTouch && getDistance(firstTouch, secondTouch) <= 500) {
       nodeTouches.secondTapPending = true; // Mark second tap as pending
     }
   };
