@@ -25,6 +25,16 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     return distanceSquared < effectiveRadius ** 2;
   }, [r]);
 
+  const isWithinRadius = useCallback((touchX, touchY) => {
+    const circle = circleRef.current.getBoundingClientRect();
+    const centerX = circle.left + circle.width / 2;
+    const centerY = circle.top + circle.height / 2;
+    const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
+    const extendedRadius = r + 200;
+    return distanceSquared < extendedRadius ** 2;
+  }, [r]);
+
+
   const handleNodeTouchStart = useCallback((e) => {
     for (let i = 0; i < e.touches.length; i++) {
       const touch = e.touches[i];
@@ -44,6 +54,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       const touch = e.touches[i];
       const { clientX, clientY, identifier } = touch;
       const isInside = isInsideCircle(clientX, clientY);
+      const isNearby = isWithinRadius(clientX, clientY);
 
       if (isInside && !activeTouches.current.has(identifier)) {
         activeTouches.current.add(identifier);
@@ -56,7 +67,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         setRadius(r);
       }
 
-      if (activeTouches.current.size >= 2) {
+      if (isNearby && activeTouches.current.size >= 1) {
         const activeTouchesArray = Array.from(activeTouches.current);
         for (const activeTouchId of activeTouchesArray) {
           const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
