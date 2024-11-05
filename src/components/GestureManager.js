@@ -27,7 +27,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     nodeTouches.firstTouch = touch;
     nodeTouches.secondTapPending = false;
-    // No need to reset infoIndex here since we will handle it in the node component
   };
 
   const handleSecondTouch = (nodeId, secondTouch) => {
