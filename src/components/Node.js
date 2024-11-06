@@ -13,7 +13,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   const circleRef = useRef(null);
   const [radius, setRadius] = useState(r);
   const infoIndex = useRef(0);
-  const isHolding = useRef(false); // Track whether the node is being held
+  //const isHolding = useRef(false); // Track whether the node is being held
   const gestureManager = GestureManager({ nodeId: id, nodeValue: value, infoIndex, r });
 
   const isInsideCircle = useCallback((touchX, touchY) => {
@@ -34,26 +34,24 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     return distanceSquared < extendedRadius ** 2;
   }, [r]);
 
-
   const handleNodeTouchStart = useCallback((e) => {
     for (let i = 0; i < e.touches.length; i++) {
       const touch = e.touches[i];
-      if (isInsideCircle(touch.clientX, touch.clientY)) {
-        activeTouches.current.add(touch.identifier);
+      const { clientX, clientY, identifier } = touch;
+
+      if (isInsideCircle(clientX, clientY)) {
+        activeTouches.current.add(identifier);
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
-        isHolding.current = true; // Mark the node as being held
         if (activeTouches.current.size > 1) {
           gestureManager.handleSecondTouch(id, touch);
-        }
+        }      
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
 
   const handleNodeTouchMove = useCallback((e) => {
-    // Check if there's an existing active hold on the node
-    if (activeTouches.current.size > 0) {
       for (let i = 0; i < e.touches.length; i++) {
         const touch = e.touches[i];
         const { clientX, clientY, identifier } = touch;
@@ -72,21 +70,20 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
           SoundManager.stopNodeSound(id);
           setRadius(r);
         }
+        
         if (activeTouches.current.size >= 1) {
-        for (const activeTouchId of activeTouchesArray) {
-          const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
-          if (activeTouch) {
-            // If the touch is within the valid area of any active node
-            if (isNearby) {
-              gestureManager.handleSecondTouch(id, touch); // Send to GestureManager
-              break; // Exit once a valid touch is identified
+          for (const activeTouchId of activeTouchesArray) {
+            const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
+            if (activeTouch) {
+              // If the touch is within the valid area of any active node
+              if (isNearby) {
+                gestureManager.handleSecondTouch(id, touch); // Send to GestureManager
+                break; // Exit once a valid touch is identified
+              }
             }
           }
         }
-       }
-
       }
-    }
   }, [id, pitch, r, isInsideCircle, isWithinRadius, gestureManager]);
 
   const handleNodeTouchEnd = useCallback((e) => {
@@ -97,7 +94,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       if (activeTouches.current.size === 0) {
         SoundManager.stopNodeSound(id);
         setRadius(r);
-        isHolding.current = false; 
+        //isHolding.current = false; 
         infoIndex.current = 0; // Reset index when the touch ends
       }
     }
