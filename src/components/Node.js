@@ -20,7 +20,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const effectiveRadius = r + 100;
+    const effectiveRadius = r + 30;
     return distanceSquared < effectiveRadius ** 2;
   }, [r]);
 
@@ -29,7 +29,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const extendedRadius = r + 600;
+    const extendedRadius = r + 200;
     return distanceSquared < extendedRadius ** 2;
   }, [r]);
 
@@ -37,19 +37,22 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     for (let i = 0; i < e.touches.length; i++) {
       const touch = e.touches[i];
       const { clientX, clientY, identifier } = touch;
-
+  
       if (isInsideCircle(clientX, clientY)) {
         activeTouches.current.add(identifier);
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
-        
-        if (activeTouches.current.size > 1) {
-          gestureManager.handleSecondTouch(id, touch);
-        }     
+      } 
+      // Check if it's within the larger radius for secondary touch activation
+      else if (isWithinRadius(clientX, clientY)) {
+        if (!activeTouches.current.has(identifier)) {
+          activeTouches.current.add(identifier); // Track this touch as a second touch within radius
+        }
+        gestureManager.handleSecondTouch(id, touch);
       }
     }
-  }, [id, pitch, r, isInsideCircle, gestureManager]);
+  }, [id, pitch, r, isInsideCircle, isWithinRadius, gestureManager]);
 
   const handleNodeTouchMove = useCallback((e) => {
       for (let i = 0; i < e.touches.length; i++) {
