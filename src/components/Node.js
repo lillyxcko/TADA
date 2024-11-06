@@ -28,10 +28,16 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const circle = circleRef.current.getBoundingClientRect();
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
-    const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const edgeRadius = r + 200;
-
-    return distanceSquared >= r ** 2 && distanceSquared <= edgeRadius ** 2;
+  
+    // Calculate the actual distance to the center
+    const distance = Math.sqrt((touchX - centerX) ** 2 + (touchY - centerY) ** 2);
+  
+    // Define the inner and outer bounds for the detection ring
+    const innerRadius = r; // Starting from the node’s radius
+    const outerRadius = r + 200; // Extending up to an additional 200px
+  
+    // Check if the touch is in the area just outside the node up to 200px
+    return distance >= innerRadius && distance <= outerRadius;
   }, [r]);
 
   const handleNodeTouchStart = useCallback((e) => {
