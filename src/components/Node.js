@@ -44,7 +44,8 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
         isHolding.current = true; // Mark the node as being held
-        //gestureManager.handleSecondTouch(id, touch);
+        
+        gestureManager.handleSecondTouch(id, touch);
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
@@ -70,7 +71,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
           SoundManager.stopNodeSound(id);
           setRadius(r);
         }
-  
+  /*
         for (const activeTouchId of activeTouchesArray) {
           const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
           if (activeTouch) {
@@ -81,6 +82,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
             }
           }
         }
+        */
       }
     }
   }, [id, pitch, r, isInsideCircle, isWithinRadius, gestureManager]);
