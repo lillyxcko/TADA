@@ -20,7 +20,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const effectiveRadius = r + 100;
+    const effectiveRadius = r + 30;
     return distanceSquared < effectiveRadius ** 2;
   }, [r]);
 
@@ -37,14 +37,16 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     for (let i = 0; i < e.touches.length; i++) {
       const touch = e.touches[i];
       const { clientX, clientY, identifier } = touch;
+      const isInside = isInsideCircle(clientX, clientY);
+      const isNearby = isWithinRadius(clientX, clientY);
 
-      if (isInsideCircle(clientX, clientY)) {
+      if (isInside) {
         activeTouches.current.add(identifier);
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
         
-        if (activeTouches.current.size > 1) {
+        if (isNearby && activeTouches.current.size > 1) {
           gestureManager.handleSecondTouch(id, touch);
         }     
       }
@@ -74,13 +76,13 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         if (activeTouches.current.size >= 1) {
           for (const activeTouchId of activeTouchesArray) {
             const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
-            if (activeTouch) {
+            //if (activeTouch) {
               // If the touch is within the valid area of any active node
               if (isNearby) {
                 gestureManager.handleSecondTouch(id, touch); // Send to GestureManager
                 break; // Exit once a valid touch is identified
               }
-            }
+            //}
           }
         }
       }
