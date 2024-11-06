@@ -53,7 +53,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
 
   const handleNodeTouchMove = useCallback((e) => {
     // Check if there's an existing active hold on the node
-    if (activeTouches.current.size >= 1) {
+    if (activeTouches.current.size > 0) {
       for (let i = 0; i < e.touches.length; i++) {
         const touch = e.touches[i];
         const { clientX, clientY, identifier } = touch;
@@ -72,7 +72,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
           SoundManager.stopNodeSound(id);
           setRadius(r);
         }
-        
+        if (activeTouches.current.size >= 1) {
         for (const activeTouchId of activeTouchesArray) {
           const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
           if (activeTouch) {
@@ -83,6 +83,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
             }
           }
         }
+       }
 
       }
     }
