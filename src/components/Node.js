@@ -72,7 +72,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
           SoundManager.stopNodeSound(id);
           setRadius(r);
         }
-        /*
+        
         for (const activeTouchId of activeTouchesArray) {
           const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
           if (activeTouch) {
@@ -83,10 +83,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
             }
           }
         }
-        */
-        if (e.touches.length >= 2) {
-          gestureManager.handleSecondTouch(id, e.touches[1]); // Pass node id to handleSecondTouch
-        }
+
       }
     }
   }, [id, pitch, r, isInsideCircle, isWithinRadius, gestureManager]);
