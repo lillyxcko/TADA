@@ -20,7 +20,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const effectiveRadius = r + 400;
+    const effectiveRadius = r + 100;
     return distanceSquared < effectiveRadius ** 2;
   }, [r]);
 
