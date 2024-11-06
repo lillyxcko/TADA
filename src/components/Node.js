@@ -20,7 +20,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const effectiveRadius = r + 30;
+    const effectiveRadius = r + 400;
     return distanceSquared < effectiveRadius ** 2;
   }, [r]);
 
@@ -43,15 +43,10 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
-        /*
+        
         if (activeTouches.current.size > 1) {
           gestureManager.handleSecondTouch(id, touch);
-        } */     
-      }
-      if (isWithinRadius(clientX,clientY)) {
-        if (activeTouches.current.size > 1) {
-          gestureManager.handleSecondTouch(id, touch);
-        }    
+        }     
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
