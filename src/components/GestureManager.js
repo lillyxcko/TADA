@@ -40,8 +40,8 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
 
   const findClosestNodeWithinRange = (touch) => {
     let closestNodeId = null;
-    let minDistance = 600;
-
+    let minDistance = 600; // Adjust to match the extended radius in handleSecondTouch
+  
     touchesByNode.current.forEach((nodeTouches, nodeId) => {
       if (!nodeTouches.isActiveTouch) return;
       const dist = getDistance(nodeTouches.firstTouch, touch);
@@ -52,11 +52,11 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
     });
     return closestNodeId;
   };
-
+  
   const handleTouchEnd = (e) => {
     const secondTouch = e.changedTouches[0];
     const closestNode = findClosestNodeWithinRange(secondTouch);
-
+  
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const { secondTapPending } = touchesByNode.current.get(closestNode);
       if (secondTapPending && !isSpeaking) {
