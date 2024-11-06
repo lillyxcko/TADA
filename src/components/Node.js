@@ -13,7 +13,6 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   const circleRef = useRef(null);
   const [radius, setRadius] = useState(r);
   const infoIndex = useRef(0);
-  //const isHolding = useRef(false); // Track whether the node is being held
   const gestureManager = GestureManager({ nodeId: id, nodeValue: value, infoIndex, r });
 
   const isInsideCircle = useCallback((touchX, touchY) => {
@@ -44,9 +43,15 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
+        /*
         if (activeTouches.current.size > 1) {
           gestureManager.handleSecondTouch(id, touch);
-        }      
+        } */     
+      }
+      if (isWithinRadius(clientX,clientY)) {
+        if (activeTouches.current.size > 1) {
+          gestureManager.handleSecondTouch(id, touch);
+        }    
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
@@ -94,7 +99,6 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       if (activeTouches.current.size === 0) {
         SoundManager.stopNodeSound(id);
         setRadius(r);
-        //isHolding.current = false; 
         infoIndex.current = 0; // Reset index when the touch ends
       }
     }
