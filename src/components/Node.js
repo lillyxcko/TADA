@@ -29,9 +29,8 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const edgeRadius = r + 200;
-
-    return distanceSquared >= r ** 2 && distanceSquared <= edgeRadius ** 2;
+    const extendedRadius = r + 200;
+    return distanceSquared < extendedRadius ** 2;
   }, [r]);
 
   const handleNodeTouchStart = useCallback((e) => {
