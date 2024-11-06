@@ -44,7 +44,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
         isHolding.current = true; // Mark the node as being held
-        gestureManager.handleSecondTouch(id, touch);
+        //gestureManager.handleSecondTouch(id, touch);
       }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
