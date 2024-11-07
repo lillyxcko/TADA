@@ -77,7 +77,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
             const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
             if (activeTouch) {
               // If the touch is within the valid area of any active node
-              if (isNearby && !activeTouches.current.has(identifier)) {
+              if (isNearby) {
                 gestureManager.handleSecondTouch(id, touch); // Send to GestureManager
                 break; // Exit once a valid touch is identified
               }
