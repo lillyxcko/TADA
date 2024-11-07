@@ -29,8 +29,8 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const extendedRadius = r + 600;
-    return distanceSquared < extendedRadius ** 2;
+    const extendedRadius = r + 200;
+    return distanceSquared <= extendedRadius ** 2;
   }, [r]);
 
   const handleNodeTouchStart = useCallback((e) => {
@@ -38,7 +38,6 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       const touch = e.touches[i];
       const { clientX, clientY, identifier } = touch;
       const isInside = isInsideCircle(clientX, clientY);
-      const isNearby = isWithinRadius(clientX, clientY);
 
       if (isInside) {
         activeTouches.current.add(identifier);
@@ -46,7 +45,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
         
-        if (isNearby && activeTouches.current.size > 1) {
+        if (activeTouches.current.size > 1) {
           gestureManager.handleSecondTouch(id, touch);
         }     
       }
@@ -76,13 +75,13 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         if (activeTouches.current.size >= 1) {
           for (const activeTouchId of activeTouchesArray) {
             const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
-            //if (activeTouch) {
+            if (activeTouch) {
               // If the touch is within the valid area of any active node
-              if (isNearby) {
+              if (isNearby && !activeTouches.current.has(identifier)) {
                 gestureManager.handleSecondTouch(id, touch); // Send to GestureManager
                 break; // Exit once a valid touch is identified
               }
-            //}
+            }
           }
         }
       }
