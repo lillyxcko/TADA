@@ -24,16 +24,14 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
       touchesByNode.current.set(nodeId, { 
         firstTouch: touch, 
         secondTapPending: false, 
-        isActiveTouch: true,
-        activeTouchCount: 1 
+        activeTouchCount: 0 
       });
-    } else {
-      touchesByNode.current.get(nodeId).activeTouchCount += 1; // Increment touch count
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
     nodeTouches.firstTouch = touch;
     nodeTouches.secondTapPending = false;
+    nodeTouches.activeTouchCount += 1; // Increment active touch count
   };
 
   const handleSecondTouch = (nodeId, secondTouch) => {
@@ -47,10 +45,10 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
 
   const findClosestNodeWithinRange = (touch) => {
     let closestNodeId = null;
-    let minDistance = 150; // Adjust to match the extended radius in handleSecondTouch
+    let minDistance = 150;
   
     touchesByNode.current.forEach((nodeTouches, nodeId) => {
-      if (!nodeTouches.isActiveTouch) return;
+      if (nodeTouches.activeTouchCount === 0) return;
       const dist = getDistance(nodeTouches.firstTouch, touch);
       if (dist < minDistance) {
         minDistance = dist;
@@ -63,25 +61,21 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r }) => {
   const handleTouchEnd = (e) => {
     const secondTouch = e.changedTouches[0];
     const closestNode = findClosestNodeWithinRange(secondTouch);
-  
+
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const nodeTouches = touchesByNode.current.get(closestNode);
       const { secondTapPending, activeTouchCount } = nodeTouches;
 
-      // Only proceed with TTS if node is still being actively touched
-      if (secondTapPending && activeTouchCount > 1 && !isSpeaking) {
+      // Only trigger TTS if there is an active touch remaining
+      if (secondTapPending && activeTouchCount > 0 && !isSpeaking) {
         const textToSpeak = nodeValue[infoIndex.current];
         speakValue(textToSpeak);
         infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
       }
 
+      // Decrement active touch count and reset second tap status if necessary
+      nodeTouches.activeTouchCount = Math.max(0, activeTouchCount - 1);
       nodeTouches.secondTapPending = false;
-      nodeTouches.activeTouchCount -= 1; // Decrement touch count
-
-      // Mark node as inactive if no active touches remain
-      if (nodeTouches.activeTouchCount === 0) {
-        nodeTouches.isActiveTouch = false;
-      }
     }
   };
 
