@@ -14,7 +14,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   const circleRef = useRef(null);
   const [radius, setRadius] = useState(r);
   const infoIndex = useRef(0);
-  const gestureManager = GestureManager({ nodeId: id, nodeValue: value, infoIndex, r });
+  const gestureManager = GestureManager({ nodeId: id, nodeValue: value, infoIndex, r, activeTouches });
 
   // Check if a touch is inside the node's main area
   const isInsideCircle = useCallback((touchX, touchY) => {
