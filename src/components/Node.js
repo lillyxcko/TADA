@@ -49,6 +49,9 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
           gestureManager.handleSecondTouch(id, touch);
         }     
       }
+      else if (isNearby) {
+        gestureManager.handleSecondTouch(id, touch);
+      }
     }
   }, [id, pitch, r, isInsideCircle, gestureManager]);
 
