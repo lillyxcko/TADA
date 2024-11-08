@@ -22,7 +22,8 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    return distanceSquared < r ** 2;
+    const extendedRadius = r + 30;
+    return distanceSquared <= extendedRadius ** 2;
   }, [r]);
 
   // Check if a touch is within an extended radius around the node
