@@ -57,38 +57,39 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   }, [id, pitch, r, isInsideCircle, gestureManager]);
 
   const handleNodeTouchMove = useCallback((e) => {
-      for (let i = 0; i < e.touches.length; i++) {
-        const touch = e.touches[i];
-        const { clientX, clientY, identifier } = touch;
-        const isInside = isInsideCircle(clientX, clientY);
-        const isNearby = isWithinRadius(clientX, clientY);
-        const activeTouchesArray = Array.from(activeTouches.current);
+    const activeTouchesArray = Array.from(activeTouches.current);
   
-        // Manage touch status within the node itself
-        if (isInside && !activeTouches.current.has(identifier)) {
+    for (const touch of e.touches) {
+      const { clientX, clientY, identifier } = touch;
+      const isInside = isInsideCircle(clientX, clientY);
+      const isNearby = isWithinRadius(clientX, clientY);
+  
+      // Manage touch status for the node itself
+      if (isInside) {
+        if (!activeTouches.current.has(identifier)) {
           activeTouches.current.add(identifier);
           SoundManager.startNodeSound(id, pitch);
           setRadius(r + 10);
           gestureManager.handleTouchStart(id, touch);
-        } else if (!isInside && activeTouches.current.has(identifier)) {
-          activeTouches.current.delete(identifier);
-          SoundManager.stopNodeSound(id);
-          setRadius(r);
         }
-        
-        if (activeTouches.current.size >= 1) {
-          for (const activeTouchId of activeTouchesArray) {
-            const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
-            if (activeTouch) {
-              // If the touch is within the valid area of any active node
-              if (isNearby) {
-                gestureManager.handleSecondTouch(id, touch); // Send to GestureManager
-                break; // Exit once a valid touch is identified
-              }
-            }
+      } else if (activeTouches.current.has(identifier)) {
+        activeTouches.current.delete(identifier);
+        SoundManager.stopNodeSound(id);
+        setRadius(r);
+      }
+  
+      // Check if any nearby touch should trigger a second-touch gesture
+      if (activeTouches.current.size > 0 && isNearby) {
+        for (const activeTouchId of activeTouchesArray) {
+          const activeTouch = e.touches.find(t => t.identifier === activeTouchId);
+  
+          if (activeTouch) {
+            gestureManager.handleSecondTouch(id, touch); // Trigger for a nearby touch
+            break; // Stop checking once a valid touch is found
           }
         }
       }
+    }
   }, [id, pitch, r, isInsideCircle, isWithinRadius, gestureManager]);
 
   const handleNodeTouchEnd = useCallback((e) => {
