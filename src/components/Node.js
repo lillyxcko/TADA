@@ -20,7 +20,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const effectiveRadius = r + 30;
+    const effectiveRadius = r + 35;
     return distanceSquared < effectiveRadius ** 2;
   }, [r]);
 
@@ -29,7 +29,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
     const centerX = circle.left + circle.width / 2;
     const centerY = circle.top + circle.height / 2;
     const distanceSquared = (touchX - centerX) ** 2 + (touchY - centerY) ** 2;
-    const extendedRadius = r + 200;
+    const extendedRadius = r + 30;
     return distanceSquared <= extendedRadius ** 2;
   }, [r]);
 
@@ -112,6 +112,17 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   }, [handleNodeTouchEnd, handleNodeTouchMove]);
 
   return (
+    <g>
+      {/* Visualization of the detection range for isWithinRadius */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r + 35}
+        fill="none"
+        stroke="orange"
+        strokeDasharray="5,5"
+        strokeWidth="1"
+      />
     <circle
       ref={circleRef}
       cx={cx}
@@ -123,6 +134,9 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       onTouchMove={handleNodeTouchMove}
       style={{ cursor: 'pointer', transition: 'r 0.2s ease' }}
     />
+
+    </g>
+    
   );
 };
 
