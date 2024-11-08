@@ -38,6 +38,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
       const touch = e.touches[i];
       const { clientX, clientY, identifier } = touch;
       const isInside = isInsideCircle(clientX, clientY);
+      const isNearby = isWithinRadius(clientX, clientY);
 
       if (isInside) {
         activeTouches.current.add(identifier);
@@ -49,7 +50,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
           gestureManager.handleSecondTouch(id, touch);
         }     
       }
-      else if (isNearby) {
+      else if (activeTouches.current.size > 1 && isNearby) {
         gestureManager.handleSecondTouch(id, touch);
       }
     }
