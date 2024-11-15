@@ -18,6 +18,7 @@ const getDistance = (touch1, touch2) => {
 
 export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
   const touchesByNode = useRef(new Map());
+  const SECOND_TAP_THRESHOLD = 300;  // in milliseconds
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
@@ -35,17 +36,23 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
       const currentTime = Date.now();
-      const duration = currentTime - (secondTouchStartTime || currentTime);
-      
-      if (duration <= 300) {
-        nodeTouches.secondTapPending = true; // Mark second tap as pending
+  
+      // If there's no secondTouchStartTime yet, initialize it
+      if (!secondTouchStartTime) {
         nodeTouches.secondTouchStartTime = currentTime;
+      }
+  
+      const duration = currentTime - secondTouchStartTime;
+      
+      if (duration <= SECOND_TAP_THRESHOLD) {
+        nodeTouches.secondTapPending = true; // Mark second tap as pending
       } else {
-        nodeTouches.secondTapPending = false; // Reset if the tap duration exceeds 300ms
-        nodeTouches.secondTouchStartTime = null;
+        nodeTouches.secondTapPending = false; // Reset if tap duration exceeds 300ms
+        nodeTouches.secondTouchStartTime = null; // Reset start time to avoid stale timing
       }
     }
   };
+  
 
   const findClosestNodeWithinRange = (touch) => {
     let closestNodeId = null;
@@ -72,7 +79,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
         const duration = Date.now() - secondTouchStartTime;
   
-        if (duration < 300) {
+        if (duration < SECOND_TAP_THRESHOLD) {
           const textToSpeak = nodeValue[infoIndex.current];
           speakValue(textToSpeak);
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
