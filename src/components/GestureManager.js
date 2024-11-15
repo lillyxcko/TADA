@@ -21,7 +21,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
-      touchesByNode.current.set(nodeId, { firstTouch: touch, secondTapPending: false, isActiveTouch: true });
+      touchesByNode.current.set(nodeId, { firstTouch: touch, secondTapPending: false, isActiveTouch: true, secondTouchStartTime: null });
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
