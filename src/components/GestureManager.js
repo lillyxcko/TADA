@@ -18,7 +18,7 @@ const getDistance = (touch1, touch2) => {
 
 export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
   const touchesByNode = useRef(new Map());
-  const SECOND_TAP_THRESHOLD = 300;  // in milliseconds
+  const SECOND_TAP_THRESHOLD = 3000;  // in milliseconds
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
