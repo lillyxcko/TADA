@@ -34,25 +34,28 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch, secondTouchStartTime } = nodeTouches;
   
+    // Ensure we are close enough to the first touch to register it as a second tap
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
       const currentTime = Date.now();
-  
-      // If there's no secondTouchStartTime yet, initialize it
+      // If secondTouchStartTime is not set, set it now
       if (!secondTouchStartTime) {
         nodeTouches.secondTouchStartTime = currentTime;
       }
   
+      // Calculate the duration of the second touch relative to the first touch
       const duration = currentTime - secondTouchStartTime;
-      
+  
       if (duration <= SECOND_TAP_THRESHOLD) {
-        nodeTouches.secondTapPending = true; // Mark second tap as pending
+        // Mark as pending second tap if within the threshold
+        nodeTouches.secondTapPending = true;
       } else {
-        nodeTouches.secondTapPending = false; // Reset if tap duration exceeds 300ms
-        nodeTouches.secondTouchStartTime = null; // Reset start time to avoid stale timing
+        // Reset second tap if too long
+        nodeTouches.secondTapPending = false;
+        nodeTouches.secondTouchStartTime = null;
       }
     }
   };
-  
+
 
   const findClosestNodeWithinRange = (touch) => {
     let closestNodeId = null;
@@ -69,6 +72,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     return closestNodeId;
   };
   
+
   const handleTouchEnd = (e) => {
     const secondTouch = e.changedTouches[0];
     const closestNode = findClosestNodeWithinRange(secondTouch);
@@ -79,7 +83,8 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
         const duration = Date.now() - secondTouchStartTime;
   
-        if (duration < SECOND_TAP_THRESHOLD) {
+        if (duration <= SECOND_TAP_THRESHOLD) {
+          // Trigger TTS here
           const textToSpeak = nodeValue[infoIndex.current];
           speakValue(textToSpeak);
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
@@ -88,7 +93,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
       // Reset the pending second tap after the touch ends
       touchesByNode.current.get(closestNode).secondTapPending = false;
-      touchesByNode.current.get(closestNode).secondTouchStartTime = null; 
+      touchesByNode.current.get(closestNode).secondTouchStartTime = null;
     }
   };
 
