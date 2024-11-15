@@ -60,6 +60,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const { secondTapPending, secondTouchStartTime } = touchesByNode.current.get(closestNode);
+  
       if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
         const duration = Date.now() - secondTouchStartTime;
         if (duration < 300) {
@@ -68,7 +69,10 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
         }
       }
+
+      // Reset the pending second tap after the touch ends
       touchesByNode.current.get(closestNode).secondTapPending = false;
+      touchesByNode.current.get(closestNode).secondTouchStartTime = null; 
     }
   };
 
