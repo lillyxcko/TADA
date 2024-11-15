@@ -35,6 +35,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
       nodeTouches.secondTapPending = true; // Mark second tap as pending
+      nodeTouches.secondTouchStartTime = Date.now();
     }
   };
 
@@ -60,9 +61,12 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const { secondTapPending } = touchesByNode.current.get(closestNode);
       if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
-        const textToSpeak = nodeValue[infoIndex.current];
-        speakValue(textToSpeak);
-        infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
+        const duration = Date.now() - secondTouchStartTime;
+        if (duration < 300) {
+          const textToSpeak = nodeValue[infoIndex.current];
+          speakValue(textToSpeak);
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
+        }
       }
       touchesByNode.current.get(closestNode).secondTapPending = false;
     }
