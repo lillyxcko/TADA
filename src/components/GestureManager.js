@@ -69,7 +69,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           const duration = Date.now() - secondTouchStartTime;
           console.log('Duration after delay:', duration);
   
-          setTimeout(() => {
             if (duration <= SECOND_TAP_THRESHOLD && duration > 10) {
               const textToSpeak = nodeValue[infoIndex.current];
               speakValue(textToSpeak);
@@ -77,7 +76,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
             } else {
               touchesByNode.current.get(closestNode).secondTapPending = false;
             }
-          }, 100)
         }
   
         // Reset second tap tracking
