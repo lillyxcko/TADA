@@ -73,8 +73,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
             const textToSpeak = nodeValue[infoIndex.current];
             speakValue(textToSpeak);
             infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
-          } else {
-            touchesByNode.current.get(closestNode).secondTapPending = false;
           }
         }
   
