@@ -83,7 +83,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         touchesByNode.current.get(closestNode).secondTapPending = false;
         touchesByNode.current.get(closestNode).secondTouchStartTime = null;
       }
-    }, 50); // Adding a small delay
+    }, 301); // Adding a small delay
   };
 
   return { handleTouchStart, handleTouchEnd, handleSecondTouch };
