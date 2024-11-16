@@ -33,11 +33,10 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch } = nodeTouches;
-  
+
     // Ensure we are close enough to the first touch to register it as a second tap
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      nodeTouches.secondTouchStartTime = Date.now();
-      nodeTouches.secondTapPending = true; // Mark second tap as pending
+      nodeTouches.secondTouchStartTime = Date.now(); // Start timing the second touch
     }
   };
 
@@ -64,22 +63,21 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       const nodeTouches = touchesByNode.current.get(closestNode);
       const { secondTouchStartTime, secondTapPending } = nodeTouches;
 
-      if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
+      if (secondTouchStartTime && !isSpeaking && activeTouches.current.size > 0) {
         // Calculate the duration after the second touch has ended
         const duration = Date.now() - secondTouchStartTime;
-  
-        if (duration <= SECOND_TAP_THRESHOLD) {
+
+        if (duration <= SECOND_TAP_THRESHOLD && !secondTapPending) {
+          // Only trigger TTS if the duration is within the threshold and not already pending
           const textToSpeak = nodeValue[infoIndex.current];
           speakValue(textToSpeak);
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
-        } else {
-          touchesByNode.current.get(closestNode).secondTapPending = false;
         }
+
+        // Reset second tap tracking after the duration check
+        touchesByNode.current.get(closestNode).secondTouchStartTime = null;
+        touchesByNode.current.get(closestNode).secondTapPending = false;
       }
-  
-      // Reset second tap tracking
-      touchesByNode.current.get(closestNode).secondTapPending = false;
-      touchesByNode.current.get(closestNode).secondTouchStartTime = null;
     }
   };
 
