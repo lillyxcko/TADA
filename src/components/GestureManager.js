@@ -32,30 +32,16 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
   const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
-    const { firstTouch, secondTouchStartTime } = nodeTouches;
+    const { firstTouch } = nodeTouches;
   
     // Ensure we are close enough to the first touch to register it as a second tap
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      const currentTime = Date.now();
-      // If secondTouchStartTime is not set, set it now
-      if (!secondTouchStartTime) {
-        nodeTouches.secondTouchStartTime = currentTime;
-      }
-  
-      // Calculate the duration of the second touch relative to the first touch
-      const duration = currentTime - secondTouchStartTime;
-  
-      if (duration <= SECOND_TAP_THRESHOLD) {
-        // Mark as pending second tap if within the threshold
-        nodeTouches.secondTapPending = true;
-      } else {
-        // Reset second tap if too long
-        nodeTouches.secondTapPending = false;
-        nodeTouches.secondTouchStartTime = null;
+      // If secondTouchStartTime is not set, set it now (this just records the start of the second touch)
+      if (!nodeTouches.secondTouchStartTime) {
+        nodeTouches.secondTouchStartTime = Date.now();
       }
     }
   };
-
 
   const findClosestNodeWithinRange = (touch) => {
     let closestNodeId = null;
@@ -71,25 +57,29 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     });
     return closestNodeId;
   };
-  
 
   const handleTouchEnd = (e) => {
     const secondTouch = e.changedTouches[0];
     const closestNode = findClosestNodeWithinRange(secondTouch);
   
     if (closestNode && touchesByNode.current.has(closestNode)) {
-      const { secondTapPending, secondTouchStartTime } = touchesByNode.current.get(closestNode);
-  
+      const nodeTouches = touchesByNode.current.get(closestNode);
+      const { secondTouchStartTime, secondTapPending } = nodeTouches;
+
       if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
-        
+        // Calculate the duration after the second touch has ended
+        const duration = Date.now() - secondTouchStartTime;
+  
+        if (duration <= SECOND_TAP_THRESHOLD) {
           const textToSpeak = nodeValue[infoIndex.current];
           speakValue(textToSpeak);
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
-        
+        }
       }
   
-      // Reset the pending second tap after the touch ends
+      // Reset second tap tracking
       touchesByNode.current.get(closestNode).secondTapPending = false;
+      touchesByNode.current.get(closestNode).secondTouchStartTime = null;
     }
   };
 
