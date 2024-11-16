@@ -18,7 +18,7 @@ const getDistance = (touch1, touch2) => {
 
 export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
   const touchesByNode = useRef(new Map());
-  const SECOND_TAP_THRESHOLD = 300;  // in milliseconds
+  const SECOND_TAP_THRESHOLD = 400;  // in milliseconds
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
@@ -58,6 +58,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   };
 
   const handleTouchEnd = (e) => {
+    setTimeout(() => {
       const secondTouch = e.changedTouches[0];
       const closestNode = findClosestNodeWithinRange(secondTouch);
     
@@ -69,19 +70,20 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           const duration = Date.now() - secondTouchStartTime;
           console.log('Duration after delay:', duration);
   
-            if (duration <= SECOND_TAP_THRESHOLD && duration > 10) {
-              const textToSpeak = nodeValue[infoIndex.current];
-              speakValue(textToSpeak);
-              infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
-            } else {
-              touchesByNode.current.get(closestNode).secondTapPending = false;
-            }
+          if (duration <= SECOND_TAP_THRESHOLD && duration > 5) {
+            const textToSpeak = nodeValue[infoIndex.current];
+            speakValue(textToSpeak);
+            infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
+          } else {
+            touchesByNode.current.get(closestNode).secondTapPending = false;
+          }
         }
   
         // Reset second tap tracking
         touchesByNode.current.get(closestNode).secondTapPending = false;
         touchesByNode.current.get(closestNode).secondTouchStartTime = null;
       }
+    }, 100); // Adding a small delay
   };
 
   return { handleTouchStart, handleTouchEnd, handleSecondTouch };
