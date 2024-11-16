@@ -58,7 +58,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   };
 
   const handleTouchEnd = (e) => {
-    setTimeout(() => {
+
       const secondTouch = e.changedTouches[0];
       const closestNode = findClosestNodeWithinRange(secondTouch);
     
@@ -68,7 +68,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
         if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
           const duration = Date.now() - secondTouchStartTime;
-          console.log('Duration after delay:', duration);
   
           if (duration <= SECOND_TAP_THRESHOLD && duration > 5) {
             const textToSpeak = nodeValue[infoIndex.current];
@@ -83,7 +82,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         touchesByNode.current.get(closestNode).secondTapPending = false;
         touchesByNode.current.get(closestNode).secondTouchStartTime = null;
       }
-    }, 100); // Adding a small delay
   };
 
   return { handleTouchStart, handleTouchEnd, handleSecondTouch };
