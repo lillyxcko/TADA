@@ -36,10 +36,8 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
     // Ensure we are close enough to the first touch to register it as a second tap
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      // If secondTouchStartTime is not set, set it now (this just records the start of the second touch)
-      if (!nodeTouches.secondTouchStartTime) {
-        nodeTouches.secondTouchStartTime = Date.now();
-      }
+      nodeTouches.secondTouchStartTime = Date.now();
+      nodeTouches.secondTapPending = true; // Mark second tap as pending
     }
   };
 
@@ -74,6 +72,8 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           const textToSpeak = nodeValue[infoIndex.current];
           speakValue(textToSpeak);
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
+        } else {
+          touchesByNode.current.get(closestNode).secondTapPending = false;
         }
       }
   
