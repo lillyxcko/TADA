@@ -69,7 +69,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         const duration = Date.now() - secondTouchStartTime;
 
 
-        if (duration <= SECOND_TAP_THRESHOLD && duration > 0) {
+        if (duration <= SECOND_TAP_THRESHOLD && duration > 50) {
           const textToSpeak = nodeValue[infoIndex.current];
           speakValue(textToSpeak);
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
