@@ -35,7 +35,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
       nodeTouches.secondTapPending = true;
-      nodeTouches.secondTouchStartTime = null; // Reset any previous second touch
       nodeTouches.secondTouchStartTime = performance.now(); // Record the start time of the second touch
     }
   };
