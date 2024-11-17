@@ -27,7 +27,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     const nodeTouches = touchesByNode.current.get(nodeId);
     nodeTouches.firstTouch = touch;
     nodeTouches.secondTapPending = false;
-    nodeTouches.secondTouchStartTime = null; // Reset any previous second touch
   };
 
   const handleSecondTouch = (nodeId, secondTouch) => {
@@ -36,6 +35,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
       nodeTouches.secondTapPending = true;
+      nodeTouches.secondTouchStartTime = null; // Reset any previous second touch
       nodeTouches.secondTouchStartTime = performance.now(); // Record the start time of the second touch
     }
   };
@@ -64,11 +64,11 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       const { secondTapPending, secondTouchStartTime } = nodeTouches;
 
       if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
-        const duration = secondTouchStartTime ? Math.round(performance.now() - secondTouchStartTime) : 0;
+        const duration = secondTouchStartTime ? Math.round(performance.now() - secondTouchStartTime) : 0; // To find duration
         const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
 
         speakValue(textToSpeak);
-        infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
+        infoIndex.current = (infoIndex.current + 1) % nodeValue.length; 
       }
       nodeTouches.secondTapPending = false;
       nodeTouches.secondTouchStartTime = null; // Reset after use
