@@ -21,12 +21,13 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
-      touchesByNode.current.set(nodeId, { firstTouch: touch, secondTapPending: false, isActiveTouch: true });
+      touchesByNode.current.set(nodeId, { firstTouch: touch, secondTapPending: false, isActiveTouch: true, secondTouchStartTime: null });
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
     nodeTouches.firstTouch = touch;
     nodeTouches.secondTapPending = false;
+    nodeTouches.secondTouchStartTime = null; // Reset any previous second touch
   };
 
   const handleSecondTouch = (nodeId, secondTouch) => {
@@ -34,7 +35,8 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     const { firstTouch } = nodeTouches;
 
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      nodeTouches.secondTapPending = true; // Mark second tap as pending
+      nodeTouches.secondTapPending = true;
+      nodeTouches.secondTouchStartTime = performance.now(); // Record the start time of the second touch
     }
   };
 
@@ -58,13 +60,18 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     const closestNode = findClosestNodeWithinRange(secondTouch);
   
     if (closestNode && touchesByNode.current.has(closestNode)) {
-      const { secondTapPending } = touchesByNode.current.get(closestNode);
+      const nodeTouches = touchesByNode.current.get(closestNode);
+      const { secondTapPending, secondTouchStartTime } = nodeTouches;
+
       if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
-        const textToSpeak = nodeValue[infoIndex.current];
+        const duration = secondTouchStartTime ? Math.round(performance.now() - secondTouchStartTime) : 0;
+        const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
+
         speakValue(textToSpeak);
         infoIndex.current = (infoIndex.current + 1) % nodeValue.length; // Move to the next index
       }
-      touchesByNode.current.get(closestNode).secondTapPending = false;
+      nodeTouches.secondTapPending = false;
+      nodeTouches.secondTouchStartTime = null; // Reset after use
     }
   };
 
