@@ -55,26 +55,26 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   // Track touch movements and check for proximity triggers
   const handleNodeTouchMove = useCallback((e) => {
     for (const touch of e.touches) {
-      const { identifier, clientX, clientY } = touch;
-      gestureManager.handleTouchMove(id, touch); // Pass touch to GestureManager
-  
-      // Handle proximity triggers as before
+      const { clientX, clientY, identifier } = touch;
       const isInside = isInsideCircle(clientX, clientY);
       const isNearby = isWithinRadius(clientX, clientY);
-  
+
       if (isInside && !activeTouches.current.has(identifier)) {
+        // Add new active touch
         activeTouches.current.add(identifier);
         SoundManager.startNodeSound(id, pitch);
         setRadius(r + 10);
         gestureManager.handleTouchStart(id, touch);
       } else if (!isInside && activeTouches.current.has(identifier)) {
+        // Remove touch if it moves outside the node
         activeTouches.current.delete(identifier);
         SoundManager.stopNodeSound(id);
         setRadius(r);
       }
-  
+
+      // If touch is nearby an active node, handle as second tap
       if (isNearby && activeTouches.current.size > 0) {
-        gestureManager.handleSecondTouch(id, touch);
+        gestureManager.handleSecondTouch(id, touch); // Trigger for a nearby touch
       }
     }
   }, [id, pitch, r, isInsideCircle, isWithinRadius, gestureManager]);

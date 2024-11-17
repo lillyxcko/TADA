@@ -18,86 +18,62 @@ const getDistance = (touch1, touch2) => {
 
 export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
   const touchesByNode = useRef(new Map());
-  const MOVEMENT_THRESHOLD = 10; // Allowable movement in pixels for a tap
 
   const handleTouchStart = (nodeId, touch) => {
-    // Initialize touch tracking for this node if not already present
     if (!touchesByNode.current.has(nodeId)) {
-      touchesByNode.current.set(nodeId, new Map());
+      touchesByNode.current.set(nodeId, { firstTouch: touch, secondTapPending: false, isActiveTouch: true, secondTouchStartTime: null });
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
-
-    // Track this specific touch
-    nodeTouches.set(touch.identifier, {
-      firstTouch: { clientX: touch.clientX, clientY: touch.clientY },
-      secondTapPending: false,
-      isActiveTouch: true,
-      secondTouchStartTime: null,
-    });
+    nodeTouches.firstTouch = touch;
+    nodeTouches.secondTapPending = false;
   };
 
   const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
-    if (!nodeTouches) return;
+    const { firstTouch } = nodeTouches;
 
-    const touchData = [...nodeTouches.values()].find(({ firstTouch }) => {
-      return getDistance(firstTouch, secondTouch) <= 150; // Check proximity
+    if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
+      nodeTouches.secondTapPending = true;
+          nodeTouches.secondTouchStartTime = null; // Reset any previous second touch
+      nodeTouches.secondTouchStartTime = performance.now(); // Record the start time of the second touch
+    }
+  };
+
+  const findClosestNodeWithinRange = (touch) => {
+    let closestNodeId = null;
+    let minDistance = 150; // Adjust to match the extended radius in handleSecondTouch
+  
+    touchesByNode.current.forEach((nodeTouches, nodeId) => {
+      if (!nodeTouches.isActiveTouch) return;
+      const dist = getDistance(nodeTouches.firstTouch, touch);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestNodeId = nodeId;
+      }
     });
-
-    if (touchData) {
-      touchData.secondTapPending = true;
-      touchData.secondTouchStartTime = performance.now(); // Record the second touch time
-    }
+    return closestNodeId;
   };
-
-  const handleTouchMove = (nodeId, touch) => {
-    const nodeTouches = touchesByNode.current.get(nodeId);
-    if (!nodeTouches) return;
-
-    const touchData = nodeTouches.get(touch.identifier);
-    if (!touchData) return;
-
-    const { firstTouch } = touchData;
-    const distanceMoved = getDistance(firstTouch, { clientX: touch.clientX, clientY: touch.clientY });
-
-    // If movement exceeds the threshold, mark this touch as inactive for a tap
-    if (distanceMoved > MOVEMENT_THRESHOLD) {
-      touchData.isActiveTouch = false;
-    }
-  };
-
+  
   const handleTouchEnd = (e) => {
     const secondTouch = e.changedTouches[0];
+    const closestNode = findClosestNodeWithinRange(secondTouch);
+  
+    if (closestNode && touchesByNode.current.has(closestNode)) {
+      const nodeTouches = touchesByNode.current.get(closestNode);
+      const { secondTapPending, secondTouchStartTime } = nodeTouches;
 
-    touchesByNode.current.forEach((nodeTouches, nodeId) => {
-      const touchData = nodeTouches.get(secondTouch.identifier);
-      if (!touchData) return;
-
-      const { secondTapPending, secondTouchStartTime, isActiveTouch } = touchData;
-
-      // Check if the touch is valid for a tap
-      if (secondTapPending && isActiveTouch && !isSpeaking && activeTouches.current.size > 0) {
-        const duration = secondTouchStartTime
-          ? Math.round(performance.now() - secondTouchStartTime)
-          : 0;
-
+      if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
+        const duration = secondTouchStartTime ? Math.round(performance.now() - secondTouchStartTime) : 0; // To find duration
         const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
+
         speakValue(textToSpeak);
-
-        // Cycle to the next value
-        infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+        infoIndex.current = (infoIndex.current + 1) % nodeValue.length; 
       }
-
-      // Clean up touch tracking for this identifier
-      nodeTouches.delete(secondTouch.identifier);
-
-      // If all touches are cleared for this node, reset its state
-      if (nodeTouches.size === 0) {
-        touchesByNode.current.delete(nodeId);
-      }
-    });
+      nodeTouches.secondTapPending = false;
+      nodeTouches.secondTouchStartTime = null; // Reset after use
+    }
   };
 
-  return { handleTouchStart, handleSecondTouch, handleTouchMove, handleTouchEnd };
+  return { handleTouchStart, handleTouchEnd, handleSecondTouch };
 };
