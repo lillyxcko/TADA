@@ -1,86 +1,84 @@
 import { useRef } from 'react';
 
-let isSpeaking = false; // Flag to ensure TTS doesn't overlap
+let isSpeaking = false;
 
-const speakValue = (text, callback) => {
+const speakValue = (text) => {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.onstart = () => (isSpeaking = true);
-  utterance.onend = () => {
-    isSpeaking = false;
-    if (callback) callback();
-  };
+  utterance.onstart = () => isSpeaking = true;
+  utterance.onend = () => isSpeaking = false;
   synth.speak(utterance);
 };
 
+const getDistance = (touch1, touch2) => {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
 export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
-  const touchesByNode = useRef(new Map()); // Tracks all active touches for each node
+  const touchesByNode = useRef(new Map());
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
-      touchesByNode.current.set(nodeId, { activeTouches: new Map(), isActiveTouch: true });
+      touchesByNode.current.set(nodeId, { firstTouch: touch, secondTapPending: false, isActiveTouch: true, secondTouchStartTime: null });
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
-    nodeTouches.activeTouches.set(touch.identifier, {
-      touch,
-      timestamp: performance.now(),
-    });
+    nodeTouches.firstTouch = touch;
+    nodeTouches.secondTapPending = false;
   };
 
-  const handleAdditionalTouch = (nodeId, additionalTouch) => {
+  const findClosestNodeWithinRange = (touch) => {
+    let closestNodeId = null;
+    let minDistance = 150; // Adjust to match the extended radius in handleSecondTouch
+  
+    touchesByNode.current.forEach((nodeTouches, nodeId) => {
+      if (!nodeTouches.isActiveTouch) return;
+      const dist = getDistance(nodeTouches.firstTouch, touch);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestNodeId = nodeId;
+      }
+    });
+    return closestNodeId;
+  };
+
+
+  const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
-
-    if (nodeTouches && nodeTouches.activeTouches.size >= 2) {
-      // Perform action for multi-finger gestures
-      const touchArray = Array.from(nodeTouches.activeTouches.values());
-      const firstTouch = touchArray[0];
-      const secondTouch = touchArray[touchArray.length - 1];
-      const duration = performance.now() - secondTouch.timestamp; // Duration in milliseconds
-
-      if (!isSpeaking) {
-        // Announce the duration of the second tap in milliseconds and the current value
-        const textToSpeak = `tap held for ${Math.round(duration)} milliseconds. ${nodeValue[infoIndex.current]}.`;
-        speakValue(textToSpeak, () => {
-          // Move to the next value after speaking is done
-          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-        });
+    const { firstTouch } = nodeTouches;
+  
+    if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
+      if (!nodeTouches.secondTouchStartTime) {
+        nodeTouches.secondTouchStartTime = performance.now(); // Start timing
       }
     }
-
-    nodeTouches.activeTouches.set(additionalTouch.identifier, {
-      touch: additionalTouch,
-      timestamp: performance.now(),
-    });
   };
-
-  const handleTouchMove = (nodeId, touch) => {
-    const nodeTouches = touchesByNode.current.get(nodeId);
-    if (!nodeTouches) return;
-
-    if (nodeTouches.activeTouches.has(touch.identifier)) {
-      nodeTouches.activeTouches.set(touch.identifier, {
-        touch,
-        timestamp: nodeTouches.activeTouches.get(touch.identifier).timestamp,
-      });
-    }
-  };
-
+  
   const handleTouchEnd = (e) => {
-    for (const changedTouch of e.changedTouches) {
-      const { identifier } = changedTouch;
-
-      touchesByNode.current.forEach((nodeTouches, nodeId) => {
-        if (nodeTouches.activeTouches.has(identifier)) {
-          nodeTouches.activeTouches.delete(identifier);
-
-          if (nodeTouches.activeTouches.size === 0) {
-            nodeTouches.isActiveTouch = false;
-          }
+    const secondTouch = e.changedTouches[0];
+    const closestNode = findClosestNodeWithinRange(secondTouch);
+  
+    if (closestNode && touchesByNode.current.has(closestNode)) {
+      const nodeTouches = touchesByNode.current.get(closestNode);
+      const { secondTouchStartTime } = nodeTouches;
+  
+      if (secondTouchStartTime) {
+        const duration = Math.round(performance.now() - secondTouchStartTime);
+  
+        // Trigger TTS only if duration is within the threshold
+        if (duration <= 300 && !isSpeaking && activeTouches.current.size > 0) {
+          const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
+          speakValue(textToSpeak);
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
         }
-      });
+      }
+  
+      // Reset state
+      nodeTouches.secondTouchStartTime = null;
     }
   };
 
-  return { handleTouchStart, handleTouchEnd, handleAdditionalTouch, handleTouchMove };
+  return { handleTouchStart, handleTouchEnd, handleSecondTouch };
 };
