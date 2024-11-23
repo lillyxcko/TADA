@@ -10,12 +10,6 @@ const speakValue = (text) => {
   synth.speak(utterance);
 };
 
-const getDistance = (touch1, touch2) => {
-  const dx = touch1.clientX - touch2.clientX;
-  const dy = touch1.clientY - touch2.clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-};
-
 export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
   const touchesByNode = useRef(new Map()); // Tracks all active touches for each node
 
@@ -38,11 +32,15 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       // Perform action for multi-finger gestures
       const touchArray = Array.from(nodeTouches.activeTouches.values());
       const firstTouch = touchArray[0];
-      const duration = performance.now() - firstTouch.timestamp;
+      const secondTouch = touchArray[touchArray.length - 1];
+      const duration = (performance.now() - secondTouch.timestamp) / 1000; // Convert ms to seconds
 
-      if (duration < 300 && !isSpeaking) {
-        const textToSpeak = `${nodeValue[infoIndex.current]}. Gesture detected with multiple fingers.`;
+      if (!isSpeaking) {
+        // Announce the duration of the second tap
+        const textToSpeak = `Second tap held for ${duration.toFixed(2)} seconds. ${nodeValue[infoIndex.current]}.`;
         speakValue(textToSpeak);
+
+        // Cycle to the next index in the array
         infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
       }
     }
