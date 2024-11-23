@@ -25,7 +25,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         firstTouch: touch,
         secondTapPending: false,
         isActiveTouch: true,
-        secondTouchStartTime: null, // Initialize second touch timing
+        secondTouchStartTime: null,
       });
     }
 
@@ -57,6 +57,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       if (!nodeTouches.secondTouchStartTime) {
         nodeTouches.secondTouchStartTime = performance.now(); // Start timing second tap
       }
+      nodeTouches.secondTapPending = true; // Mark this as a valid second tap
     }
   };
 
@@ -66,12 +67,12 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const nodeTouches = touchesByNode.current.get(closestNode);
-      const { secondTouchStartTime } = nodeTouches;
+      const { secondTapPending, secondTouchStartTime } = nodeTouches;
 
-      if (secondTouchStartTime) {
+      if (secondTapPending && secondTouchStartTime) {
         const duration = Math.round(performance.now() - secondTouchStartTime);
 
-        // Trigger TTS only if duration is within the threshold
+        // Trigger TTS only if valid second tap
         if (!isSpeaking && activeTouches.current.size > 0) {
           const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
           speakValue(textToSpeak);
@@ -79,10 +80,11 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           // Advance to the next value in the array
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
         }
-      }
 
-      // Reset second tap timing
-      nodeTouches.secondTouchStartTime = null;
+        // Reset second tap state for subsequent taps
+        nodeTouches.secondTapPending = false;
+        nodeTouches.secondTouchStartTime = null;
+      }
     }
   };
 
