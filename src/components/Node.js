@@ -107,17 +107,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   }, [handleNodeTouchEnd, handleNodeTouchMove]);
 
   return (
-    <g>
-      {/* Visualization of the detection range for isWithinRadius */}
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r + 35}
-        fill="none"
-        stroke="orange"
-        strokeDasharray="5,5"
-        strokeWidth="1"
-      />
+
       <circle
         ref={circleRef}
         cx={cx}
@@ -129,7 +119,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
         onTouchMove={handleNodeTouchMove}
         style={{ cursor: 'pointer', transition: 'r 0.2s ease' }}
       />
-    </g>
+    
   );
 };
 

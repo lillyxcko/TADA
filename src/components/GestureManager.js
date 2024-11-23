@@ -44,6 +44,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     return closestNodeId;
   };
 
+
   const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch } = nodeTouches;
