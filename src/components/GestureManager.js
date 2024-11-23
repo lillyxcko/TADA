@@ -1,12 +1,15 @@
 import { useRef } from 'react';
 
-let isSpeaking = false;
+let isSpeaking = false; // Flag to ensure TTS doesn't overlap
 
-const speakValue = (text) => {
+const speakValue = (text, callback) => {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.onstart = () => (isSpeaking = true);
-  utterance.onend = () => (isSpeaking = false);
+  utterance.onend = () => {
+    isSpeaking = false;
+    if (callback) callback();
+  };
   synth.speak(utterance);
 };
 
@@ -33,15 +36,15 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       const touchArray = Array.from(nodeTouches.activeTouches.values());
       const firstTouch = touchArray[0];
       const secondTouch = touchArray[touchArray.length - 1];
-      const duration = (performance.now() - secondTouch.timestamp) / 1000; // Convert ms to seconds
+      const duration = performance.now() - secondTouch.timestamp; // Duration in milliseconds
 
       if (!isSpeaking) {
-        // Announce the duration of the second tap
-        const textToSpeak = `Second tap held for ${duration.toFixed(2)} seconds. ${nodeValue[infoIndex.current]}.`;
-        speakValue(textToSpeak);
-
-        // Cycle to the next index in the array
-        infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+        // Announce the duration of the second tap in milliseconds and the current value
+        const textToSpeak = `tap held for ${Math.round(duration)} milliseconds. ${nodeValue[infoIndex.current]}.`;
+        speakValue(textToSpeak, () => {
+          // Move to the next value after speaking is done
+          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+        });
       }
     }
 
