@@ -49,14 +49,9 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     const { firstTouch } = nodeTouches;
   
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      nodeTouches.secondTapPending = true;
-  
-      // Set a timeout to cancel TTS if the second touch lasts too long
-      nodeTouches.timeoutId = setTimeout(() => {
-        nodeTouches.secondTapPending = false;
-      }, 300);
-  
-      nodeTouches.secondTouchStartTime = performance.now();
+      if (!nodeTouches.secondTouchStartTime) {
+        nodeTouches.secondTouchStartTime = performance.now(); // Start timing
+      }
     }
   };
   
@@ -66,23 +61,20 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const nodeTouches = touchesByNode.current.get(closestNode);
-      const { secondTapPending, secondTouchStartTime, timeoutId } = nodeTouches;
+      const { secondTouchStartTime } = nodeTouches;
   
-      clearTimeout(timeoutId); // Clear timeout when the touch ends
+      if (secondTouchStartTime) {
+        const duration = Math.round(performance.now() - secondTouchStartTime);
   
-      if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
-        const duration = secondTouchStartTime
-          ? Math.round(performance.now() - secondTouchStartTime)
-          : 0;
-  
-        if (duration <= 300) {
+        // Trigger TTS only if duration is within the threshold
+        if (duration <= 300 && !isSpeaking && activeTouches.current.size > 0) {
           const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
           speakValue(textToSpeak);
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
         }
       }
   
-      nodeTouches.secondTapPending = false;
+      // Reset state
       nodeTouches.secondTouchStartTime = null;
     }
   };
