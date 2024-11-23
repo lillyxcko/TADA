@@ -5,8 +5,8 @@ let isSpeaking = false;
 const speakValue = (text) => {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.onstart = () => isSpeaking = true;
-  utterance.onend = () => isSpeaking = false;
+  utterance.onstart = () => (isSpeaking = true);
+  utterance.onend = () => (isSpeaking = false);
   synth.speak(utterance);
 };
 
@@ -17,68 +17,69 @@ const getDistance = (touch1, touch2) => {
 };
 
 export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
-  const touchesByNode = useRef(new Map());
+  const touchesByNode = useRef(new Map()); // Tracks all active touches for each node
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
-      touchesByNode.current.set(nodeId, { firstTouch: touch, secondTapPending: false, isActiveTouch: true, secondTouchStartTime: null });
+      touchesByNode.current.set(nodeId, { activeTouches: new Map(), isActiveTouch: true });
     }
 
     const nodeTouches = touchesByNode.current.get(nodeId);
-    nodeTouches.firstTouch = touch;
-    nodeTouches.secondTapPending = false;
-  };
-
-  const findClosestNodeWithinRange = (touch) => {
-    let closestNodeId = null;
-    let minDistance = 150; // Adjust to match the extended radius in handleSecondTouch
-  
-    touchesByNode.current.forEach((nodeTouches, nodeId) => {
-      if (!nodeTouches.isActiveTouch) return;
-      const dist = getDistance(nodeTouches.firstTouch, touch);
-      if (dist < minDistance) {
-        minDistance = dist;
-        closestNodeId = nodeId;
-      }
+    nodeTouches.activeTouches.set(touch.identifier, {
+      touch,
+      timestamp: performance.now(),
     });
-    return closestNodeId;
   };
 
-
-  const handleSecondTouch = (nodeId, secondTouch) => {
+  const handleAdditionalTouch = (nodeId, additionalTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
-    const { firstTouch } = nodeTouches;
-  
-    if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      if (!nodeTouches.secondTouchStartTime) {
-        nodeTouches.secondTouchStartTime = performance.now(); // Start timing
+
+    if (nodeTouches && nodeTouches.activeTouches.size >= 2) {
+      // Perform action for multi-finger gestures
+      const touchArray = Array.from(nodeTouches.activeTouches.values());
+      const firstTouch = touchArray[0];
+      const duration = performance.now() - firstTouch.timestamp;
+
+      if (duration < 300 && !isSpeaking) {
+        const textToSpeak = `${nodeValue[infoIndex.current]}. Gesture detected with multiple fingers.`;
+        speakValue(textToSpeak);
+        infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
       }
     }
+
+    nodeTouches.activeTouches.set(additionalTouch.identifier, {
+      touch: additionalTouch,
+      timestamp: performance.now(),
+    });
   };
-  
-  const handleTouchEnd = (e) => {
-    const secondTouch = e.changedTouches[0];
-    const closestNode = findClosestNodeWithinRange(secondTouch);
-  
-    if (closestNode && touchesByNode.current.has(closestNode)) {
-      const nodeTouches = touchesByNode.current.get(closestNode);
-      const { secondTouchStartTime } = nodeTouches;
-  
-      if (secondTouchStartTime) {
-        const duration = Math.round(performance.now() - secondTouchStartTime);
-  
-        // Trigger TTS only if duration is within the threshold
-        if (duration <= 300 && !isSpeaking && activeTouches.current.size > 0) {
-          const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
-          speakValue(textToSpeak);
-          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-        }
-      }
-  
-      // Reset state
-      nodeTouches.secondTouchStartTime = null;
+
+  const handleTouchMove = (nodeId, touch) => {
+    const nodeTouches = touchesByNode.current.get(nodeId);
+    if (!nodeTouches) return;
+
+    if (nodeTouches.activeTouches.has(touch.identifier)) {
+      nodeTouches.activeTouches.set(touch.identifier, {
+        touch,
+        timestamp: nodeTouches.activeTouches.get(touch.identifier).timestamp,
+      });
     }
   };
 
-  return { handleTouchStart, handleTouchEnd, handleSecondTouch };
+  const handleTouchEnd = (e) => {
+    for (const changedTouch of e.changedTouches) {
+      const { identifier } = changedTouch;
+
+      touchesByNode.current.forEach((nodeTouches, nodeId) => {
+        if (nodeTouches.activeTouches.has(identifier)) {
+          nodeTouches.activeTouches.delete(identifier);
+
+          if (nodeTouches.activeTouches.size === 0) {
+            nodeTouches.isActiveTouch = false;
+          }
+        }
+      });
+    }
+  };
+
+  return { handleTouchStart, handleTouchEnd, handleAdditionalTouch, handleTouchMove };
 };
