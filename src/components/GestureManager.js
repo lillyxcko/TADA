@@ -76,14 +76,16 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         if (!isSpeaking && activeTouches.current.size > 0) {
           const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
           speakValue(textToSpeak);
-          nodeTouches.secondTapPending = false;
-          nodeTouches.secondTouchStartTime = null;
+          
           // Advance to the next value in the array
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+
+          nodeTouches.secondTapPending = false;
+          nodeTouches.secondTouchStartTime = null;
         }
 
         // Reset second tap state for subsequent taps
-        
+        nodeTouches.secondTouchStartTime = null;
       }
     }
   };
