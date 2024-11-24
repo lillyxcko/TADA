@@ -85,6 +85,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         }
       }
     }
+    nodeTouches.secondTouchStartTime = null;
   };
 
   return { handleTouchStart, handleTouchEnd, handleSecondTouch };
