@@ -39,6 +39,21 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     nodeTouches.secondTapPending = false; // Reset second tap state
   };
 
+  const findClosestNodeWithinRange = (touch) => {
+    let closestNodeId = null;
+    let minDistance = 150; // Adjust to match the extended radius in handleSecondTouch
+  
+    touchesByNode.current.forEach((nodeTouches, nodeId) => {
+      if (!nodeTouches.isActiveTouch) return;
+      const dist = getDistance(nodeTouches.firstTouch, touch);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestNodeId = nodeId;
+      }
+    });
+    return closestNodeId;
+  };
+
   const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch } = nodeTouches;
