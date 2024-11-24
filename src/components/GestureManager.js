@@ -1,23 +1,10 @@
-import { useRef } from 'react';
-
-let isSpeaking = false; // Prevent overlapping TTS
-
-const speakValue = (text) => {
-  const synth = window.speechSynthesis;
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.onstart = () => (isSpeaking = true);
-  utterance.onend = () => (isSpeaking = false);
-  synth.speak(utterance);
-};
-
-const getDistance = (touch1, touch2) => {
-  const dx = touch1.clientX - touch2.clientX;
-  const dy = touch1.clientY - touch2.clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-};
-
 export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
   const touchesByNode = useRef(new Map());
+
+  const resetTouchState = (nodeTouches) => {
+    nodeTouches.secondTapPending = false;
+    nodeTouches.secondTouchStartTime = null;
+  };
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
@@ -34,29 +21,13 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     nodeTouches.secondTapPending = false; // Reset second tap state
   };
 
-  const findClosestNodeWithinRange = (touch) => {
-    let closestNodeId = null;
-    let minDistance = 150; // Adjust to match the extended radius
-
-    touchesByNode.current.forEach((nodeTouches, nodeId) => {
-      if (!nodeTouches.isActiveTouch) return;
-      const dist = getDistance(nodeTouches.firstTouch, touch);
-      if (dist < minDistance) {
-        minDistance = dist;
-        closestNodeId = nodeId;
-      }
-    });
-    return closestNodeId;
-  };
-
   const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch } = nodeTouches;
 
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      
-      nodeTouches.secondTouchStartTime = performance.now(); // Start timing second tap
-      
+      // Reset the timer for a new second tap
+      nodeTouches.secondTouchStartTime = performance.now(); // Always reset for every second tap
       nodeTouches.secondTapPending = true; // Mark this as a valid second tap
     }
   };
@@ -79,13 +50,18 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
           // Advance to the next value in the array
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-          nodeTouches.secondTouchStartTime = null;
-        }
 
-        // Reset second tap state for subsequent taps
-        nodeTouches.secondTapPending = false;
-        nodeTouches.secondTouchStartTime = null;
+          // Reset second tap state for subsequent taps
+          resetTouchState(nodeTouches);
+        }
       }
+    }
+
+    // Check if all fingers are lifted
+    if (e.touches.length === 0) {
+      touchesByNode.current.forEach((nodeTouches) => {
+        resetTouchState(nodeTouches); // Reset state when no fingers are left on the screen
+      });
     }
   };
 
