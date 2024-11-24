@@ -64,30 +64,36 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   const handleTouchEnd = (e) => {
     const secondTouch = e.changedTouches[0];
     const closestNode = findClosestNodeWithinRange(secondTouch);
-
+  
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const nodeTouches = touchesByNode.current.get(closestNode);
       const { secondTapPending, secondTouchStartTime } = nodeTouches;
-
+  
       if (secondTapPending && secondTouchStartTime) {
         const duration = Math.round(performance.now() - secondTouchStartTime);
-
+  
         // Trigger TTS only if valid second tap
         if (!isSpeaking && activeTouches.current.size > 0) {
           const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
           speakValue(textToSpeak);
-          
+  
           // Advance to the next value in the array
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-
+  
+          // Reset second tap state for subsequent taps
           nodeTouches.secondTapPending = false;
-          nodeTouches.secondTouchStartTime = null;
+          nodeTouches.secondTouchStartTime = null; // Reset immediately after TTS
         }
-
-        // Reset second tap state for subsequent taps
-        nodeTouches.secondTouchStartTime = null;
       }
     }
+  
+    // Ensure other touch states are managed normally
+    touchesByNode.current.forEach((nodeTouches, nodeId) => {
+      const { firstTouch } = nodeTouches;
+      if (firstTouch && firstTouch.identifier === secondTouch.identifier) {
+        nodeTouches.isActiveTouch = false;
+      }
+    });
   };
 
   return { handleTouchStart, handleTouchEnd, handleSecondTouch };
