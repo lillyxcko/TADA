@@ -22,6 +22,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   const resetTouchState = (nodeTouches) => {
     nodeTouches.secondTapPending = false;
     nodeTouches.secondTouchStartTime = null;
+    nodeTouches.isOutsideSecondTap = false
   };
 
   const handleTouchStart = (nodeId, touch) => {
@@ -60,7 +61,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
       // If the second tap is already tracked, don't reset the timer
-      if (nodeTouches.secondTapPending) {
+      if (nodeTouches.secondTapPending || nodeTouches.isOutsideSecondTap) {
         return;
       }
   
@@ -84,7 +85,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       const nodeTouches = touchesByNode.current.get(closestNode);
       const { secondTapPending, secondTouchStartTime, isOutsideSecondTap } = nodeTouches;
   
-      if (secondTapPending && secondTouchStartTime) {
+      if (secondTapPending && secondTouchStartTime ||isOutsideSecondTap && secondTouchStartTime) {
         const duration = Math.round(performance.now() - secondTouchStartTime);
   
         // Trigger TTS if valid second tap
@@ -95,12 +96,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           // Advance to the next value in the array
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
         }
-  
-        // Ensure the timer resets after taps outside the node as well
-        if (isOutsideSecondTap) {
-          nodeTouches.isOutsideSecondTap = false; // Clear flag
-        }
-  
+
         // Reset state for subsequent taps
         resetTouchState(nodeTouches);
       }
