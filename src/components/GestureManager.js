@@ -42,10 +42,15 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   const handleSecondTouch = (nodeId, secondTouch) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch } = nodeTouches;
-
+  
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      // Reset the timer for a new second tap
-      nodeTouches.secondTouchStartTime = performance.now(); // Always reset for every second tap
+      // If the touch is already being tracked as an ongoing second tap, do nothing
+      if (nodeTouches.secondTapPending) {
+        return; // Prevent resetting the timer for the same tap
+      }
+  
+      // Otherwise, start tracking this as a new second tap
+      nodeTouches.secondTouchStartTime = performance.now(); // Start timing the new second tap
       nodeTouches.secondTapPending = true; // Mark this as a valid second tap
     }
   };
@@ -53,28 +58,28 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   const handleTouchEnd = (e) => {
     const secondTouch = e.changedTouches[0];
     const closestNode = findClosestNodeWithinRange(secondTouch);
-
+  
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const nodeTouches = touchesByNode.current.get(closestNode);
       const { secondTapPending, secondTouchStartTime } = nodeTouches;
-
+  
       if (secondTapPending && secondTouchStartTime) {
         const duration = Math.round(performance.now() - secondTouchStartTime);
-
+  
         // Trigger TTS only if valid second tap
         if (!isSpeaking && activeTouches.current.size > 0) {
           const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
           speakValue(textToSpeak);
-
+  
           // Advance to the next value in the array
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-
-          // Reset second tap state for subsequent taps
-          resetTouchState(nodeTouches);
         }
+  
+        // Reset second tap state for subsequent taps
+        resetTouchState(nodeTouches);
       }
     }
-
+  
     // Check if all fingers are lifted
     if (e.touches.length === 0) {
       touchesByNode.current.forEach((nodeTouches) => {
