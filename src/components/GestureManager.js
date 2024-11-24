@@ -79,6 +79,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
           // Advance to the next value in the array
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+          nodeTouches.secondTouchStartTime = null;
         }
 
         // Reset second tap state for subsequent taps
