@@ -19,6 +19,11 @@ const getDistance = (touch1, touch2) => {
 export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
   const touchesByNode = useRef(new Map());
 
+  const resetTouchState = (nodeTouches) => {
+    nodeTouches.secondTapPending = false;
+    nodeTouches.secondTouchStartTime = null;
+  };
+
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
       touchesByNode.current.set(nodeId, {
@@ -54,10 +59,9 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     const { firstTouch } = nodeTouches;
 
     if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      if (!nodeTouches.secondTouchStartTime) {
-        nodeTouches.secondTouchStartTime = performance.now(); // Start timing second tap
-      }
-      nodeTouches.secondTapPending = true; // Mark this as a valid second tap
+      // Reset the timer for a new second tap
+      nodeTouches.secondTouchStartTime = performance.now(); // Start timing the new second tap
+      nodeTouches.secondTapPending = true;
     }
   };
 
@@ -76,16 +80,22 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         if (!isSpeaking && activeTouches.current.size > 0) {
           const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
           speakValue(textToSpeak);
-          
+
           // Advance to the next value in the array
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
 
-          nodeTouches.secondTapPending = false;
-          nodeTouches.secondTouchStartTime = null;
+          // Reset second tap state for subsequent taps
+          resetTouchState(nodeTouches);
         }
       }
     }
-    nodeTouches.secondTouchStartTime = null;
+
+    // Check if all fingers are lifted
+    if (e.touches.length === 0) {
+      touchesByNode.current.forEach((nodeTouches) => {
+        resetTouchState(nodeTouches); // Reset state when no fingers are left on the screen
+      });
+    }
   };
 
   return { handleTouchStart, handleTouchEnd, handleSecondTouch };
