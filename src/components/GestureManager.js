@@ -22,7 +22,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   const resetTouchState = (nodeTouches) => {
     nodeTouches.secondTapPending = false;
     nodeTouches.secondTouchStartTime = null; // Ensure the timer is cleared
-    nodeTouches.isOutsideSecondTap = false; // Reset flag for outside taps
   };
 
   const handleTouchStart = (nodeId, touch) => {
@@ -72,9 +71,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       nodeTouches.secondTouchStartTime = performance.now();
       nodeTouches.secondTapPending = true;
   
-      // Check if the tap is outside the node
-      const isOutsideNode = getDistance({ clientX: nodeValue.cx, clientY: nodeValue.cy }, secondTouch) > r;
-      nodeTouches.isOutsideSecondTap = isOutsideNode;
     }
   };
 
@@ -84,10 +80,10 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const nodeTouches = touchesByNode.current.get(closestNode);
-      const { secondTapPending, secondTouchStartTime, isOutsideSecondTap } = nodeTouches;
+      const { secondTapPending, secondTouchStartTime } = nodeTouches;
   
       // Handle valid second taps (inside or outside the node)
-      if ((secondTapPending || isOutsideSecondTap) && secondTouchStartTime) {
+      if (secondTapPending && secondTouchStartTime) {
         const duration = Math.round(performance.now() - secondTouchStartTime);
   
         if (!isSpeaking && activeTouches.current.size > 0) {
