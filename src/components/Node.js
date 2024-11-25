@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { SoundManager } from './SoundManager';
 import { GestureManager } from './GestureManager';
+import LinkProximity from './LinkProximity';
+
 
 // Calculate distance between two touches
 const getDistance = (touch1, touch2) => {
@@ -9,7 +11,7 @@ const getDistance = (touch1, touch2) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-const Node = ({ id, cx, cy, r, pitch, value }) => {
+const Node = ({ id, cx, cy, r, pitch, value, links }) => {
   const activeTouches = useRef(new Set());
   const circleRef = useRef(null);
   const [radius, setRadius] = useState(r);
@@ -107,19 +109,19 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
   }, [handleNodeTouchEnd, handleNodeTouchMove]);
 
   return (
-
+    <>
       <circle
         ref={circleRef}
         cx={cx}
         cy={cy}
         r={radius}
         fill="lightblue"
-        onTouchStart={handleNodeTouchStart}
-        onTouchEnd={handleNodeTouchEnd}
-        onTouchMove={handleNodeTouchMove}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         style={{ cursor: 'pointer', transition: 'r 0.2s ease' }}
       />
-    
+      <LinkProximity nodeId={id} links={links} /> {/* Pass links to LinkProximity */}
+    </>
   );
 };
 
