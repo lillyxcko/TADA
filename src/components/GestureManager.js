@@ -80,6 +80,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           if (!nodeTouches.isNavigating) {
             console.log(`Switching to navigation mode for node ${nodeId}`);
             SoundManager.stopNodeSound(nodeId); // Stop the node sound only here
+            speakValue("find links");
             nodeTouches.isNavigating = true; // Set navigation mode flag
           }
   
