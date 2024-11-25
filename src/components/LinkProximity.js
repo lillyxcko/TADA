@@ -36,7 +36,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     synth.speak(utterance);
   };
 
-  // Calculate the proximity to links and angle differences
+  // Calculate proximity feedback
   const calculateProximityFeedback = (touch) => {
     let closestLinkDistance = Infinity;
     let closestLinkAngleDiff = 0;
@@ -59,7 +59,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
       }
     });
 
-    // Calculate rotational feedback based on touch movement
+    // Calculate rotational feedback
     if (lastTouchPositionRef.current && closestLink) {
       const prevDiff = {
         x: lastTouchPositionRef.current.x - closestLink.closestX,
@@ -88,6 +88,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     console.log('Proximity Feedback:', feedback); // Debugging purposes
 
     if (gainRef.current && oscillatorRef.current) {
+      // Ensure gain and frequency are continuously updated
       gainRef.current.gain.rampTo(feedback.volume, 0.1);
       oscillatorRef.current.frequency.rampTo(440 + feedback.frequencyChange, 0.1);
     }
@@ -96,7 +97,6 @@ const LinkProximity = forwardRef(({ links }, ref) => {
   };
 
   const startProximityMode = () => {
-    //speakValue('Starting Proximity Mode');
     isProximityActive.current = true;
 
     if (gainRef.current) {
@@ -105,7 +105,6 @@ const LinkProximity = forwardRef(({ links }, ref) => {
   };
 
   const stopProximityMode = () => {
-    //speakValue('Stopping Proximity Mode');
     isProximityActive.current = false;
 
     if (gainRef.current) {
@@ -115,13 +114,11 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     lastTouchPositionRef.current = null;
   };
 
-  // Expose methods to the parent via ref
   useImperativeHandle(ref, () => ({
     startProximityMode,
     stopProximityMode,
   }));
 
-  // Attach a global touchmove listener to track touch movements
   useEffect(() => {
     const handleTouchMoveEvent = (e) => {
       if (e.touches.length > 0) {
