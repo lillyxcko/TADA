@@ -30,6 +30,14 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     };
   }, []);
 
+  const speakValue = (text) => {
+    const synth = window.speechSynthesis;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onstart = () => (isSpeaking = true);
+    utterance.onend = () => (isSpeaking = false);
+    synth.speak(utterance);
+  };
+
   // Calculate proximity feedback
   const calculateProximityFeedback = (touch) => {
     let closestLinkDistance = Infinity;
@@ -100,7 +108,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
 
   const stopProximityMode = () => {
     isProximityActive.current = false;
-
+    speakValue("stopping");
     if (gainRef.current) {
       gainRef.current.gain.rampTo(0, 0.5); // Fade out sound
     }
