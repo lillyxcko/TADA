@@ -32,6 +32,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         secondTapPending: false,
         isActiveTouch: true,
         secondTouchStartTime: null,
+        navInterval: null,
       });
     }
 
@@ -63,7 +64,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
     const distance = getDistance(firstTouch, secondTouch);
     if (distance <= 150) {
-      // Prevent duplicate timer resets
       if (nodeTouches.secondTapPending) {
         return;
       }
@@ -82,11 +82,12 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           nodeTouches.secondTapPending = false;
           nodeTouches.isNavigating = true; // Set navigation mode flag
   
-          clearInterval(interval); // Stop checking after switching mode
+          clearInterval(nodeTouches.navInterval); // Stop checking after switching mode
+          nodeTouches.navInterval = null; // Reset the interval reference
         }
       }, 50); // Check every 50ms
   
-      
+      nodeTouches.navInterval = interval; // Store the interval ID
     }
   };
 
@@ -105,9 +106,14 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         if (!isSpeaking && activeTouches.current.size > 0) {
           const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
           speakValue(textToSpeak);
-          clearInterval(interval);
   
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+        }
+
+        // Clear navigation interval if it exists
+        if (navInterval) {
+          clearInterval(navInterval);
+          nodeTouches.navInterval = null;
         }
   
         // Reset the timer and state after TTS
