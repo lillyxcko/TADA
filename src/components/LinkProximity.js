@@ -9,7 +9,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
 
   // Initialize sound system
   useEffect(() => {
-    const gain = new Tone.Gain(0).toDestination(); // Start with zero volume
+    const gain = new Tone.Gain(2).toDestination(); // Start with zero volume
     const oscillator = new Tone.Oscillator({
       type: 'sine',
       frequency: 440, // Default frequency
