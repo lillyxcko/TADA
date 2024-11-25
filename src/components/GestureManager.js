@@ -68,15 +68,13 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         return;
       }
   
-      // Start the timer and mark as second tap
+      // Start the timer for the second tap
       nodeTouches.secondTouchStartTime = performance.now();
       nodeTouches.secondTapPending = true;
   
-      // Determine if the tap is outside the node
+      // Check if the tap is outside the node
       const isOutsideNode = getDistance({ clientX: nodeValue.cx, clientY: nodeValue.cy }, secondTouch) > r;
       nodeTouches.isOutsideSecondTap = isOutsideNode;
-  
-      console.log(`Second tap detected. Outside node: ${isOutsideNode}, Timer started.`);
     }
   };
 
@@ -88,31 +86,20 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       const nodeTouches = touchesByNode.current.get(closestNode);
       const { secondTapPending, secondTouchStartTime, isOutsideSecondTap } = nodeTouches;
   
-      // Check if a valid second tap is in progress
+      // Handle valid second taps (inside or outside the node)
       if ((secondTapPending || isOutsideSecondTap) && secondTouchStartTime) {
         const duration = Math.round(performance.now() - secondTouchStartTime);
-        console.log(`Second tap ended. Duration: ${duration} ms`);
   
-        // Trigger TTS for valid second tap
         if (!isSpeaking && activeTouches.current.size > 0) {
           const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
           speakValue(textToSpeak);
   
-          // Advance to the next value in the array
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
         }
   
-        // Reset the touch state after TTS, regardless of tap location
+        // Reset the timer and state after TTS
         resetTouchState(nodeTouches);
-      } else {
-        console.warn('No valid second tap state found for reset.');
       }
-    }
-  
-    // Reset all nodes if no active touches remain
-    if (e.touches.length === 0) {
-      console.log('All touches ended. Resetting all nodes.');
-      touchesByNode.current.forEach((nodeTouches) => resetTouchState(nodeTouches));
     }
   };
 
