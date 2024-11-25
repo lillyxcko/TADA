@@ -113,7 +113,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           // Second tap ended before 300ms
           console.log(`Second tap ended before 300ms (${duration}ms). Triggering TTS.`);
           if (!isSpeaking && activeTouches.current.size > 0) {
-            const textToSpeak = `${nodeValue[infoIndex.current]}`;
+            const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
             speakValue(textToSpeak);
   
             infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
