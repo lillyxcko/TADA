@@ -30,12 +30,6 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     };
   }, []);
 
-  const speakValue = (text) => {
-    const synth = window.speechSynthesis;
-    const utterance = new SpeechSynthesisUtterance(text);
-    synth.speak(utterance);
-  };
-
   // Calculate proximity feedback
   const calculateProximityFeedback = (touch) => {
     let closestLinkDistance = Infinity;
@@ -76,7 +70,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     const volume = Math.max(0, 1 - closestLinkDistance / maxDistance);
     const frequencyChange = closestLinkAngleDiff * 100; // Scale angular changes to frequency
 
-    return { volume, frequencyChange, closestLink };
+    return { volume, frequencyChange };
   };
 
   const handleTouchMove = (touch) => {
@@ -88,9 +82,9 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     console.log('Proximity Feedback:', feedback); // Debugging purposes
 
     if (gainRef.current && oscillatorRef.current) {
-      // Ensure gain and frequency are continuously updated
-      gainRef.current.gain.rampTo(feedback.volume, 0.1);
-      oscillatorRef.current.frequency.rampTo(440 + feedback.frequencyChange, 0.1);
+      // Continuously update gain and frequency
+      gainRef.current.gain.value = feedback.volume; // Immediate change for responsiveness
+      oscillatorRef.current.frequency.value = 440 + feedback.frequencyChange;
     }
 
     lastTouchPositionRef.current = { x: touchX, y: touchY };
