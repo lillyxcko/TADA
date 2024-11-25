@@ -107,7 +107,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       }
   
       if (secondTapPending && secondTouchStartTime) {
-        const duration = performance.now() - nodeTouches.secondTouchStartTime;
+        const duration = Math.round(performance.now() - nodeTouches.secondTouchStartTime);
   
         if (duration < 300) {
           // Second tap ended before 300ms
