@@ -70,7 +70,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       nodeTouches.secondTapPending = true;
   
       // Explicitly track second taps outside the node
-      const isOutsideNode = getDistance({ clientX: nodeValue.cx, clientY: nodeValue.cy }, secondTouch) > 55;
+      const isOutsideNode = getDistance({ clientX: nodeValue.cx, clientY: nodeValue.cy }, secondTouch) > 100;
       if (isOutsideNode) {
         nodeTouches.isOutsideSecondTap = true; // Flag for taps outside node
       }
