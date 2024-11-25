@@ -59,20 +59,25 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     const nodeTouches = touchesByNode.current.get(nodeId);
     const { firstTouch } = nodeTouches;
   
-    if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      // If the second tap is already tracked, don't reset the timer
+    if (!firstTouch) return;
+  
+    const distance = getDistance(firstTouch, secondTouch);
+    if (distance <= 150) {
+      // Prevent duplicate timer resets
       if (nodeTouches.secondTapPending || nodeTouches.isOutsideSecondTap) {
+        console.log('Second tap already pending. Ignoring duplicate.');
         return;
       }
   
-      // Mark this as a new second tap
-      nodeTouches.secondTouchStartTime = performance.now(); // Start the timer
+      // Start the timer and mark as second tap
+      nodeTouches.secondTouchStartTime = performance.now();
       nodeTouches.secondTapPending = true;
   
-      // Explicitly track second taps outside the node
+      // Determine if the tap is outside the node
       const isOutsideNode = getDistance({ clientX: nodeValue.cx, clientY: nodeValue.cy }, secondTouch) > r;
-      nodeTouches.isOutsideSecondTap = isOutsideNode; // Set the outside flag if applicable
+      nodeTouches.isOutsideSecondTap = isOutsideNode;
   
+      console.log(`Second tap detected. Outside node: ${isOutsideNode}, Timer started.`);
     }
   };
 
@@ -84,10 +89,12 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       const nodeTouches = touchesByNode.current.get(closestNode);
       const { secondTapPending, secondTouchStartTime, isOutsideSecondTap } = nodeTouches;
   
+      // Check if a valid second tap is in progress
       if ((secondTapPending || isOutsideSecondTap) && secondTouchStartTime) {
         const duration = Math.round(performance.now() - secondTouchStartTime);
+        console.log(`Second tap ended. Duration: ${duration} ms`);
   
-        // Trigger TTS if valid second tap
+        // Trigger TTS for valid second tap
         if (!isSpeaking && activeTouches.current.size > 0) {
           const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
           speakValue(textToSpeak);
@@ -96,13 +103,16 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
         }
   
-        // Reset state after processing
+        // Reset the touch state after TTS, regardless of tap location
         resetTouchState(nodeTouches);
+      } else {
+        console.warn('No valid second tap state found for reset.');
       }
     }
   
-    // Reset state if all touches are lifted
+    // Reset all nodes if no active touches remain
     if (e.touches.length === 0) {
+      console.log('All touches ended. Resetting all nodes.');
       touchesByNode.current.forEach((nodeTouches) => resetTouchState(nodeTouches));
     }
   };
