@@ -78,11 +78,11 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
         if (duration > 300) {
           // Only stop the sound after 300ms
-          //if (!nodeTouches.isNavigating) {
+          if (!nodeTouches.isNavigating) {
             console.log(`Switching to navigation mode for node ${nodeId}`);
             SoundManager.stopNodeSound(nodeId); // Stop the node sound only here
             nodeTouches.isNavigating = true; // Set navigation mode flag
-          //}
+          }
   
           clearInterval(nodeTouches.navInterval); // Stop checking after switching mode
           nodeTouches.navInterval = null; // Reset the interval reference
@@ -126,6 +126,11 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
         // Reset the timer and state
         resetTouchState(nodeTouches);
+      }
+      // Reset isNavigating to false when the second tap ends
+      if (isNavigating) {
+        console.log(`Second tap lifted, exiting navigation mode for node ${closestNode}`);
+        nodeTouches.isNavigating = false;
       }
     }
   };
