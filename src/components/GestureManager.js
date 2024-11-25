@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { SoundManager } from './SoundManager';
 
 let isSpeaking = false; // Prevent overlapping TTS
 
@@ -85,8 +86,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         }
       }, 50); // Check every 50ms
   
-      // Store the interval to clear later if needed
-      nodeTouches.navInterval = interval;
+      
     }
   };
 
@@ -107,12 +107,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           speakValue(textToSpeak);
   
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
-        }
-
-        // Clear navigation interval if it exists
-        if (navInterval) {
-          clearInterval(navInterval);
-          nodeTouches.navInterval = null;
         }
   
         // Reset the timer and state after TTS
