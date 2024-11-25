@@ -12,7 +12,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     const gain = new Tone.Gain(2).toDestination(); // Start with zero volume
     const oscillator = new Tone.Oscillator({
       type: 'sine',
-      frequency: 440, // Default frequency
+      frequency: 120, // Default frequency
     }).connect(gain);
 
     oscillator.start(); // Start the oscillator
