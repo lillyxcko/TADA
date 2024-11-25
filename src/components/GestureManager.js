@@ -21,8 +21,8 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
   const resetTouchState = (nodeTouches) => {
     nodeTouches.secondTapPending = false;
-    nodeTouches.secondTouchStartTime = null;
-    nodeTouches.isOutsideSecondTap = false
+    nodeTouches.secondTouchStartTime = null; // Ensure the timer is cleared
+    nodeTouches.isOutsideSecondTap = false; // Reset flag for outside taps
   };
 
   const handleTouchStart = (nodeId, touch) => {
@@ -66,14 +66,13 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       }
   
       // Mark this as a new second tap
-      nodeTouches.secondTouchStartTime = performance.now();
+      nodeTouches.secondTouchStartTime = performance.now(); // Start the timer
       nodeTouches.secondTapPending = true;
   
       // Explicitly track second taps outside the node
-      const isOutsideNode = getDistance({ clientX: nodeValue.cx, clientY: nodeValue.cy }, secondTouch) > 25;
-      if (isOutsideNode) {
-        nodeTouches.isOutsideSecondTap = true; // Flag for taps outside node
-      }
+      const isOutsideNode = getDistance({ clientX: nodeValue.cx, clientY: nodeValue.cy }, secondTouch) > r;
+      nodeTouches.isOutsideSecondTap = isOutsideNode; // Set the outside flag if applicable
+  
     }
   };
 
@@ -85,7 +84,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       const nodeTouches = touchesByNode.current.get(closestNode);
       const { secondTapPending, secondTouchStartTime, isOutsideSecondTap } = nodeTouches;
   
-      if (secondTapPending && secondTouchStartTime ||isOutsideSecondTap && secondTouchStartTime) {
+      if ((secondTapPending || isOutsideSecondTap) && secondTouchStartTime) {
         const duration = Math.round(performance.now() - secondTouchStartTime);
   
         // Trigger TTS if valid second tap
@@ -96,8 +95,8 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           // Advance to the next value in the array
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
         }
-
-        // Reset state for subsequent taps
+  
+        // Reset state after processing
         resetTouchState(nodeTouches);
       }
     }
