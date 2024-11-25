@@ -99,7 +99,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const nodeTouches = touchesByNode.current.get(closestNode);
-      const { secondTapPending, secondTouchStartTime, navInterval } = nodeTouches;
+      const { secondTapPending, secondTouchStartTime, navInterval, isNavigating } = nodeTouches;
   
       // Clear navigation interval if it exists
       if (navInterval) {
