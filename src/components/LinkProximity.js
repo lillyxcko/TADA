@@ -83,7 +83,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
   };
 
   const handleTouchMove = (touch) => {
-    if (!isProximityActive.current) return;
+    //if (!isProximityActive.current) return;
 
     const { clientX: touchX, clientY: touchY } = touch;
     const feedback = calculateProximityFeedback({ x: touchX, y: touchY });
@@ -109,7 +109,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
 
   const stopProximityMode = () => {
     isProximityActive.current = false;
-    speakValue("stopping");
+    //speakValue("stopping");
     if (gainRef.current) {
       gainRef.current.gain.rampTo(0, 0.5); // Fade out sound
     }
