@@ -17,7 +17,7 @@ const getDistance = (touch1, touch2) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
+export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches, proximityRef }) => {
   const touchesByNode = useRef(new Map());
 
   const resetTouchState = (nodeTouches) => {
@@ -138,7 +138,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         // Reset the timer and state
         resetTouchState(nodeTouches);
       }
-      
+
       if (proximityRef && proximityRef.current) {
         proximityRef.current.stopProximityMode();
       }
