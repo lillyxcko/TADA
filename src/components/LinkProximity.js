@@ -30,6 +30,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     };
   }, []);
 
+  let isSpeaking = false; // Prevent overlapping TTS
   const speakValue = (text) => {
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(text);
