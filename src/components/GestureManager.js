@@ -65,7 +65,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     const distance = getDistance(firstTouch, secondTouch);
     if (distance <= 150) {
       if (nodeTouches.secondTapPending) {
-        return;
+        return; // Prevent duplicate handling
       }
   
       // Start the timer for the second tap
@@ -77,10 +77,12 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         const duration = performance.now() - nodeTouches.secondTouchStartTime;
   
         if (duration > 300) {
-          // Switch to navigation mode
-          SoundManager.stopNodeSound(nodeId); // Stop the node sound
-          nodeTouches.secondTapPending = false;
-          nodeTouches.isNavigating = true; // Set navigation mode flag
+          // Only stop the sound after 300ms
+          if (!nodeTouches.isNavigating) {
+            console.log(`Switching to navigation mode for node ${nodeId}`);
+            SoundManager.stopNodeSound(nodeId); // Stop the node sound only here
+            nodeTouches.isNavigating = true; // Set navigation mode flag
+          }
   
           clearInterval(nodeTouches.navInterval); // Stop checking after switching mode
           nodeTouches.navInterval = null; // Reset the interval reference
@@ -106,16 +108,23 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
       }
   
       if (secondTapPending && secondTouchStartTime) {
-        const duration = Math.round(performance.now() - secondTouchStartTime);
+        const duration = performance.now() - nodeTouches.secondTouchStartTime;
   
-        if (!isSpeaking && activeTouches.current.size > 0) {
-          const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
-          speakValue(textToSpeak);
+        if (duration < 300) {
+          // Second touch ended before 300ms
+          console.log(`Second tap ended before 300ms (${duration}ms). Triggering TTS.`);
+          if (!isSpeaking && activeTouches.current.size > 0) {
+            const textToSpeak = `${nodeValue[infoIndex.current]}`;
+            speakValue(textToSpeak);
   
-          infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+            infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+          }
+        } else {
+          // Second touch lasted more than 300ms
+          console.log(`Second tap held longer than 300ms (${duration}ms). Navigation mode would have been activated.`);
         }
   
-        // Reset the timer and state after processing
+        // Reset the timer and state
         resetTouchState(nodeTouches);
       }
     }
