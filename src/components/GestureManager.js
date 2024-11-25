@@ -77,7 +77,6 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         const duration = performance.now() - nodeTouches.secondTouchStartTime;
   
         if (duration > 300) {
-          // Only stop the sound after 300ms
           if (!nodeTouches.isNavigating) {
             console.log(`Switching to navigation mode for node ${nodeId}`);
             SoundManager.stopNodeSound(nodeId); // Stop the node sound only here
@@ -111,7 +110,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         const duration = performance.now() - nodeTouches.secondTouchStartTime;
   
         if (duration < 300) {
-          // Second touch ended before 300ms
+          // Second tap ended before 300ms
           console.log(`Second tap ended before 300ms (${duration}ms). Triggering TTS.`);
           if (!isSpeaking && activeTouches.current.size > 0) {
             const textToSpeak = `${nodeValue[infoIndex.current]}`;
@@ -119,18 +118,13 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
             infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
           }
-        } else {
-          // Second touch lasted more than 300ms
-          console.log(`Second tap held longer than 300ms (${duration}ms). Navigation mode would have been activated.`);
+        } else if (isNavigating) {
+          console.log(`Exiting navigation mode for node ${closestNode}`);
+          nodeTouches.isNavigating = false; // Reset navigation flag
         }
   
         // Reset the timer and state
         resetTouchState(nodeTouches);
-      }
-      // Reset isNavigating to false when the second tap ends
-      if (isNavigating) {
-        console.log(`Second tap lifted, exiting navigation mode for node ${closestNode}`);
-        nodeTouches.isNavigating = false;
       }
     }
   };
