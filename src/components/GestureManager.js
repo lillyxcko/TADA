@@ -81,6 +81,12 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
             console.log(`Switching to navigation mode for node ${nodeId}`);
             SoundManager.stopNodeSound(nodeId); // Stop the node sound only here
             speakValue("find links");
+            
+            // Trigger LinkProximity
+            const linkProximityInstance = document.getElementById(`proximity-${nodeId}`);
+            if (linkProximityInstance) {
+              linkProximityInstance.startProximityMode(); // Start proximity mode
+            }
             nodeTouches.isNavigating = true; // Set navigation mode flag
           }
   
