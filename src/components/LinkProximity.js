@@ -96,7 +96,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
   };
 
   const startProximityMode = () => {
-    speakValue('Starting Proximity Mode');
+    //speakValue('Starting Proximity Mode');
     isProximityActive.current = true;
 
     if (gainRef.current) {
@@ -105,7 +105,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
   };
 
   const stopProximityMode = () => {
-    speakValue('Stopping Proximity Mode');
+    //speakValue('Stopping Proximity Mode');
     isProximityActive.current = false;
 
     if (gainRef.current) {
