@@ -86,7 +86,6 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     const feedback = calculateProximityFeedback({ x: touchX, y: touchY });
 
     console.log('Proximity Feedback:', feedback); // Debugging purposes
-    speakValue(`Volume: ${feedback.volume.toFixed(2)}, Frequency Change: ${feedback.frequencyChange.toFixed(2)}`);
 
     if (gainRef.current && oscillatorRef.current) {
       gainRef.current.gain.rampTo(feedback.volume, 0.1);
