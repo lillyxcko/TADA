@@ -32,10 +32,10 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         secondTapPending: false,
         isActiveTouch: true,
         secondTouchStartTime: null,
-        navInterval: null,
+        navInterval: null, // Add navInterval here
       });
     }
-
+  
     const nodeTouches = touchesByNode.current.get(nodeId);
     nodeTouches.firstTouch = touch;
     nodeTouches.secondTapPending = false; // Reset second tap state
@@ -97,9 +97,14 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const nodeTouches = touchesByNode.current.get(closestNode);
-      const { secondTapPending, secondTouchStartTime } = nodeTouches;
+      const { secondTapPending, secondTouchStartTime, navInterval } = nodeTouches;
   
-      // Handle valid second taps (inside or outside the node)
+      // Clear navigation interval if it exists
+      if (navInterval) {
+        clearInterval(navInterval);
+        nodeTouches.navInterval = null;
+      }
+  
       if (secondTapPending && secondTouchStartTime) {
         const duration = Math.round(performance.now() - secondTouchStartTime);
   
@@ -109,14 +114,8 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
         }
-
-        // Clear navigation interval if it exists
-        if (navInterval) {
-          clearInterval(navInterval);
-          nodeTouches.navInterval = null;
-        }
   
-        // Reset the timer and state after TTS
+        // Reset the timer and state after processing
         resetTouchState(nodeTouches);
       }
     }
