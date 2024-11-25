@@ -123,6 +123,12 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
           nodeTouches.isNavigating = false; // Reset navigation flag
         }
   
+        // Do not stop the node sound for short taps
+        if (duration >= 300 && !isNavigating) {
+          console.log(`Second tap held longer than 300ms (${duration}ms).`);
+          SoundManager.stopNodeSound(closestNode); // Stop sound only for long taps
+        }
+  
         // Reset the timer and state
         resetTouchState(nodeTouches);
       }
