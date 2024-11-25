@@ -64,8 +64,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     const distance = getDistance(firstTouch, secondTouch);
     if (distance <= 150) {
       // Prevent duplicate timer resets
-      if (nodeTouches.secondTapPending || nodeTouches.isOutsideSecondTap) {
-        console.log('Second tap already pending. Ignoring duplicate.');
+      if (nodeTouches.secondTapPending) {
         return;
       }
   
