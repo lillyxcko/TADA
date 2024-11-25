@@ -105,6 +105,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         if (!isSpeaking && activeTouches.current.size > 0) {
           const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
           speakValue(textToSpeak);
+          clearInterval(interval);
   
           infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
         }
