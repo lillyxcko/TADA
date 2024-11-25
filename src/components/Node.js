@@ -11,11 +11,18 @@ const getDistance = (touch1, touch2) => {
 };
 
 const Node = ({ id, cx, cy, r, pitch, value, links }) => {
+  const proximityRef = useRef(null);
   const activeTouches = useRef(new Set());
   const circleRef = useRef(null);
   const [radius, setRadius] = useState(r);
   const infoIndex = useRef(0);
-  const gestureManager = GestureManager({ nodeId: id, nodeValue: value, infoIndex, r, activeTouches });
+  const gestureManager = GestureManager({
+    nodeId: id,
+    nodeValue: value,
+    infoIndex,
+    r, 
+    activeTouches,
+    proximityRef });
 
   // Check if a touch is inside the node's main area
   const isInsideCircle = useCallback((touchX, touchY) => {
@@ -120,8 +127,8 @@ const Node = ({ id, cx, cy, r, pitch, value, links }) => {
           onTouchMove={handleNodeTouchMove}
           style={{ cursor: 'pointer', transition: 'r 0.2s ease' }}
         />
-      <LinkProximity nodeId={id} links={links} /> {/* Pass links to LinkProximity */}
-  </>
+      <LinkProximity ref={proximityRef} nodeId={id} links={links} />
+      </>
     
   );
 };

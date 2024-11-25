@@ -32,7 +32,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
         secondTapPending: false,
         isActiveTouch: true,
         secondTouchStartTime: null,
-        navInterval: null, // Add navInterval here
+        navInterval: null, 
       });
     }
   
@@ -81,11 +81,10 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
             console.log(`Switching to navigation mode for node ${nodeId}`);
             SoundManager.stopNodeSound(nodeId); // Stop the node sound only here
             speakValue("find links");
-            
+
             // Trigger LinkProximity
-            const linkProximityInstance = document.getElementById(`proximity-${nodeId}`);
-            if (linkProximityInstance) {
-              linkProximityInstance.startProximityMode(); // Start proximity mode
+            if (proximityRef && proximityRef.current) {
+              proximityRef.current.startProximityMode();
             }
             nodeTouches.isNavigating = true; // Set navigation mode flag
           }
@@ -138,6 +137,10 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
   
         // Reset the timer and state
         resetTouchState(nodeTouches);
+      }
+      
+      if (proximityRef && proximityRef.current) {
+        proximityRef.current.stopProximityMode();
       }
     }
   };

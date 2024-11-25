@@ -1,15 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import * as Tone from 'tone';
 
-const LinkProximity = ({ links }) => {
+const LinkProximity = forwardRef(({ links }, ref) => {
   const oscillatorRef = useRef(null);
   const gainRef = useRef(null);
+  const lastPositionRef = useRef(null);
+  const isProximityActive = useRef(false);
 
+  // Initialize sound system
   useEffect(() => {
     const gain = new Tone.Gain(0).toDestination();
     const oscillator = new Tone.Oscillator({
       type: 'sine',
-      frequency: 440,
+      frequency: 440, // Default frequency
     }).connect(gain);
 
     oscillator.start();
@@ -22,36 +25,72 @@ const LinkProximity = ({ links }) => {
     };
   }, []);
 
-  const calculateVolume = (touchX, touchY) => {
-    let minDistance = Infinity;
+  // Calculate the volume and frequency based on proximity to links
+  const calculateProximityFeedback = (touch) => {
+    let closestLinkDistance = Infinity;
 
     links.forEach(({ x1, y1, x2, y2 }) => {
       const dx = x2 - x1;
       const dy = y2 - y1;
       const lengthSquared = dx * dx + dy * dy;
-      const t = Math.max(0, Math.min(1, ((touchX - x1) * dx + (touchY - y1) * dy) / lengthSquared));
+      const t = Math.max(0, Math.min(1, ((touch.x - x1) * dx + (touch.y - y1) * dy) / lengthSquared));
       const closestX = x1 + t * dx;
       const closestY = y1 + t * dy;
-      const distance = Math.sqrt((closestX - touchX) ** 2 + (closestY - touchY) ** 2);
-      minDistance = Math.min(minDistance, distance);
+      const distance = Math.sqrt((closestX - touch.x) ** 2 + (closestY - touch.y) ** 2);
+
+      closestLinkDistance = Math.min(closestLinkDistance, distance);
     });
 
     const maxDistance = 200;
-    return Math.max(0, 1 - minDistance / maxDistance);
+    const volume = Math.max(0, 1 - closestLinkDistance / maxDistance);
+
+    return { volume };
   };
 
-  const handleTouchMove = (e) => {
-    const touch = e.touches[0];
-    const volume = calculateVolume(touch.clientX, touch.clientY);
-    gainRef.current.gain.rampTo(volume, 0.1);
+  const handleTouchMove = (touch) => {
+    if (!isProximityActive.current) return;
+
+    const { clientX: touchX, clientY: touchY } = touch;
+    const feedback = calculateProximityFeedback({ x: touchX, y: touchY });
+
+    if (gainRef.current) {
+      gainRef.current.gain.rampTo(feedback.volume, 0.1);
+    }
   };
+
+  const startProximityMode = () => {
+    isProximityActive.current = true;
+    if (gainRef.current) {
+      gainRef.current.gain.rampTo(0.5, 0.1); // Start with an audible volume
+    }
+  };
+
+  const stopProximityMode = () => {
+    isProximityActive.current = false;
+    if (gainRef.current) {
+      gainRef.current.gain.rampTo(0, 0.5); // Fade out sound
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    startProximityMode,
+    stopProximityMode,
+  }));
 
   useEffect(() => {
-    document.addEventListener('touchmove', handleTouchMove);
-    return () => document.removeEventListener('touchmove', handleTouchMove);
+    const handleTouchMoveEvent = (e) => {
+      if (e.touches.length > 0) {
+        handleTouchMove(e.touches[0]);
+      }
+    };
+
+    document.addEventListener('touchmove', handleTouchMoveEvent);
+    return () => {
+      document.removeEventListener('touchmove', handleTouchMoveEvent);
+    };
   }, []);
 
   return null;
-};
+});
 
 export default LinkProximity;
