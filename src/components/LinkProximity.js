@@ -30,16 +30,20 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     };
   }, []);
 
+  let isSpeaking = false; // Prevent overlapping TTS
   const speakValue = (text) => {
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onstart = () => (isSpeaking = true);
+    utterance.onend = () => (isSpeaking = false);
     synth.speak(utterance);
   };
 
   // Calculate proximity feedback
   const calculateProximityFeedback = (touch) => {
     let closestLinkDistance = Infinity;
-    // let closestLinkAngleDiff = 0; // Commenting out unused angular calculations for now
+    let closestLinkAngleDiff = 0;
+    let closestLink = null;
 
     links.forEach(({ x1, y1, x2, y2 }) => {
       const dx = x2 - x1;
@@ -54,26 +58,42 @@ const LinkProximity = forwardRef(({ links }, ref) => {
       const distance = Math.sqrt((closestX - touch.x) ** 2 + (closestY - touch.y) ** 2);
       if (distance < closestLinkDistance) {
         closestLinkDistance = distance;
-        // closestLink = { x1, y1, x2, y2, closestX, closestY }; // Not needed for now
+        closestLink = { x1, y1, x2, y2, closestX, closestY };
       }
     });
 
+    // Calculate rotational feedback
+    if (lastTouchPositionRef.current && closestLink) {
+      const prevDiff = {
+        x: lastTouchPositionRef.current.x - closestLink.closestX,
+        y: lastTouchPositionRef.current.y - closestLink.closestY,
+      };
+      const currDiff = {
+        x: touch.x - closestLink.closestX,
+        y: touch.y - closestLink.closestY,
+      };
+      closestLinkAngleDiff = Math.atan2(currDiff.y, currDiff.x) - Math.atan2(prevDiff.y, prevDiff.x);
+    }
+
     const maxDistance = 200; // Maximum distance for proximity feedback
     const volume = Math.max(0, 1 - closestLinkDistance / maxDistance);
+    const frequencyChange = closestLinkAngleDiff * 100; // Scale angular changes to frequency
 
-    // For now, return only volume without frequency adjustment
-    return { volume /* , frequencyChange: 0 */ };
+    return { volume, frequencyChange };
   };
 
   const handleTouchMove = (touch) => {
+    //if (!isProximityActive.current) return;
+
     const { clientX: touchX, clientY: touchY } = touch;
     const feedback = calculateProximityFeedback({ x: touchX, y: touchY });
 
-    console.log('Proximity Feedback (Volume Only):', feedback.volume);
+    console.log('Proximity Feedback:', feedback); // Debugging purposes
 
-    if (gainRef.current) {
-      // Continuously update only the volume
+    if (gainRef.current && oscillatorRef.current) {
+      // Continuously update gain and frequency
       gainRef.current.gain.value = feedback.volume; // Immediate change for responsiveness
+      oscillatorRef.current.frequency.value = 440 + feedback.frequencyChange;
     }
 
     lastTouchPositionRef.current = { x: touchX, y: touchY };
@@ -89,7 +109,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
 
   const stopProximityMode = () => {
     isProximityActive.current = false;
-
+    //speakValue("stopping");
     if (gainRef.current) {
       gainRef.current.gain.rampTo(0, 0.5); // Fade out sound
     }
