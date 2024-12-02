@@ -37,6 +37,7 @@ export const GestureManager = ({
         isNavigating: false,
         secondTouchIdentifier: null,
         secondTouchStartTime: null,
+        isSecondTouchActive: false,
       });
     }
 
@@ -59,9 +60,10 @@ export const GestureManager = ({
 
       nodeTouches.secondTouchIdentifier = touch.identifier;
       nodeTouches.secondTouchStartTime = performance.now();
+      nodeTouches.isSecondTouchActive = true;
 
       const checkDuration = () => {
-        if (!nodeTouches.secondTouchStartTime) return;
+        if (!nodeTouches.secondTouchStartTime || !nodeTouches.isSecondTouchActive) return;
 
         const duration = performance.now() - nodeTouches.secondTouchStartTime;
 
@@ -94,16 +96,28 @@ export const GestureManager = ({
     // Remove touches from activeTouches
     for (let touch of e.changedTouches) {
       if (touch.identifier === nodeTouches.secondTouchIdentifier) {
-        nodeTouches.secondTouchIdentifier = null;
-        nodeTouches.secondTouchStartTime = null;
+        const duration = performance.now() - nodeTouches.secondTouchStartTime;
 
-        if (nodeTouches.isNavigating) {
+        if (duration < 300 && !nodeTouches.isNavigating) {
+          // Second tap ended before 300ms
+          console.log(`Second tap ended before 300ms (${duration}ms). Triggering TTS.`);
+          if (!isSpeaking && activeTouches.current.size > 0) {
+            const textToSpeak = `${nodeValue[infoIndex.current]}`;
+            speakValue(textToSpeak);
+
+            infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+          }
+        } else if (nodeTouches.isNavigating) {
           console.log(`Exiting navigation mode for node ${nodeId}`);
           nodeTouches.isNavigating = false;
           if (proximityRef && proximityRef.current) {
             proximityRef.current.stopProximityMode();
           }
         }
+
+        nodeTouches.secondTouchIdentifier = null;
+        nodeTouches.secondTouchStartTime = null;
+        nodeTouches.isSecondTouchActive = false;
       }
     }
   };
