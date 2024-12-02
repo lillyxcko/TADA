@@ -75,7 +75,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
       }
     });
 
-    const maxDistance = 150; // Maximum distance for proximity feedback
+    const maxDistance = 80; // Maximum distance for proximity feedback
     const normalizedDistance = closestLinkDistance / maxDistance;
     const exponent = 5; // Adjust this value for sharper increase
     const volume = Math.max(0, 1 - Math.pow(normalizedDistance, exponent));
