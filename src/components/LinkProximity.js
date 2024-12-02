@@ -4,7 +4,6 @@ import * as Tone from 'tone';
 const LinkProximity = forwardRef(({ links }, ref) => {
   const oscillatorRef = useRef(null);
   const gainRef = useRef(null);
-  const lastTouchPositionRef = useRef(null);
   const isProximityActive = useRef(false);
 
   // Initialize sound system
@@ -30,15 +29,6 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     };
   }, []);
 
-  let isSpeaking = false; // Prevent overlapping TTS
-  const speakValue = (text) => {
-    const synth = window.speechSynthesis;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.onstart = () => (isSpeaking = true);
-    utterance.onend = () => (isSpeaking = false);
-    synth.speak(utterance);
-  };
-
   // Calculate proximity feedback
   const calculateProximityFeedback = (touch) => {
     let closestLinkDistance = Infinity;
@@ -53,7 +43,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     const transformedTouch = point.matrixTransform(svg.getScreenCTM().inverse());
 
     links.forEach(({ x1, y1, x2, y2 }) => {
-      // No transformation needed for link coordinates
+      // Use link coordinates directly (they are in SVG coordinates)
       const transformedStart = { x: x1, y: y1 };
       const transformedEnd = { x: x2, y: y2 };
 
@@ -96,7 +86,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
   };
 
   const handleTouchMove = (touch) => {
-    //if (!isProximityActive.current) return;
+    if (!isProximityActive.current) return;
 
     const { clientX: touchX, clientY: touchY } = touch;
     const feedback = calculateProximityFeedback({ x: touchX, y: touchY });
@@ -106,10 +96,7 @@ const LinkProximity = forwardRef(({ links }, ref) => {
     if (gainRef.current && oscillatorRef.current) {
       // Continuously update gain and frequency
       gainRef.current.gain.value = feedback.volume; // Immediate change for responsiveness
-      oscillatorRef.current.frequency.value = 440 + feedback.frequencyChange;
     }
-
-    lastTouchPositionRef.current = { x: touchX, y: touchY };
   };
 
   const startProximityMode = () => {
@@ -122,12 +109,10 @@ const LinkProximity = forwardRef(({ links }, ref) => {
 
   const stopProximityMode = () => {
     isProximityActive.current = false;
-    //speakValue("stopping");
+
     if (gainRef.current) {
       gainRef.current.gain.rampTo(0, 0.5); // Fade out sound
     }
-
-    lastTouchPositionRef.current = null;
   };
 
   useImperativeHandle(ref, () => ({
@@ -137,12 +122,14 @@ const LinkProximity = forwardRef(({ links }, ref) => {
 
   useEffect(() => {
     const handleTouchMoveEvent = (e) => {
-      if (e.touches.length > 0) {
-        handleTouchMove(e.touches[0]);
+      if (isProximityActive.current && e.touches.length > 0) {
+        // Use the second touch (assuming the first touch is on the node)
+        const touch = e.touches[e.touches.length - 1];
+        handleTouchMove(touch);
       }
     };
 
-    document.addEventListener('touchmove', handleTouchMoveEvent);
+    document.addEventListener('touchmove', handleTouchMoveEvent, { passive: false });
     return () => {
       document.removeEventListener('touchmove', handleTouchMoveEvent);
     };
