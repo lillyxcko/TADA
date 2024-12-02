@@ -93,7 +93,6 @@ export const GestureManager = ({
   const handleTouchEnd = (e) => {
     const nodeTouches = touchesByNode.current.get(nodeId);
 
-    // Remove touches from activeTouches
     for (let touch of e.changedTouches) {
       if (touch.identifier === nodeTouches.secondTouchIdentifier) {
         const duration = performance.now() - nodeTouches.secondTouchStartTime;
@@ -115,6 +114,7 @@ export const GestureManager = ({
           }
         }
 
+        // **Reset the duration counter and flags when the second touch ends**
         nodeTouches.secondTouchIdentifier = null;
         nodeTouches.secondTouchStartTime = null;
         nodeTouches.isSecondTouchActive = false;
