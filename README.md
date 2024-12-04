@@ -1,4 +1,4 @@
-What is this?
+<h1>What is this?</h1>
 
 A node-link diagram is a visualization technique where individual data points, or “nodes,” are represented as distinct points, and their relationships are depicted as connecting lines, or “links.” These diagrams are widely used for visualizing networks, such as social connections, organizational charts, or data flow, because they effectively capture relational and structural information. However, traditional node-link diagram representations can pose challenges, particularly for users with visual impairments or those who prefer non-visual interaction methods. In this project, we explore an approach to enhancing diagram accessibility and usability through an interactive tool implemented in React.js and Tone.js.
 
