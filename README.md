@@ -6,3 +6,5 @@ This project builds on the foundation laid by the system described in “Designi
 
 The interactions supported by the system—single-finger sweeps, dwell and tap, and dwell and circle —remain core to this design. These gestures facilitate exploration, navigation, and understanding of diagram elements and relationships. The project focuses on preserving spatial awareness and providing dynamic auditory feedback, creating an inclusive experience for users.
 Interactive diagram access tools like this have the potential to transform how individuals perceive and interpret complex diagrams. By moving to a web-based implementation, we aim to make this technology more versatile, scalable, and integrable into broader contexts, ultimately contributing to a more accessible and inclusive digital environment.
+
+[1]   Yichun Zhao, Miguel A Nacenta, Mahadeo A. Sukhai, and Sowmya Somanath. 2024. TADA: Making Node-link Diagrams Accessible to Blind and Low-Vision People. In Proceedings of the CHI Conference on Human Factors in Computing Systems (CHI ’24). ACM, New York, NY, USA, Article 45, 20 pages. https://doi.org/10.1145/3613904.3642222
