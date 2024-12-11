@@ -108,16 +108,7 @@ const Node = ({ id, cx, cy, r, pitch, value }) => {
 
   return (
     <g>
-      {/* Visualization of the detection range for isWithinRadius */}
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r + 35}
-        fill="none"
-        stroke="orange"
-        strokeDasharray="5,5"
-        strokeWidth="1"
-      />
+      
       <circle
         ref={circleRef}
         cx={cx}

@@ -65,7 +65,7 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
 
       if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
         const duration = secondTouchStartTime ? Math.round(performance.now() - secondTouchStartTime) : 0; // To find duration
-        const textToSpeak = `${nodeValue[infoIndex.current]}. Held for ${duration} milliseconds.`;
+        const textToSpeak = `${nodeValue[infoIndex.current]}`;
 
         speakValue(textToSpeak);
         infoIndex.current = (infoIndex.current + 1) % nodeValue.length; 
