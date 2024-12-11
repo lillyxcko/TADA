@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { SoundManager } from './SoundManager';
 import { GestureManager } from './GestureManager';
-import LinkProximity from './LinkProximity';
 
 // Calculate distance between two touches
 const getDistance = (touch1, touch2) => {
@@ -10,19 +9,12 @@ const getDistance = (touch1, touch2) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-const Node = ({ id, cx, cy, r, pitch, value, links }) => {
-  const proximityRef = useRef(null);
+const Node = ({ id, cx, cy, r, pitch, value }) => {
   const activeTouches = useRef(new Set());
   const circleRef = useRef(null);
   const [radius, setRadius] = useState(r);
   const infoIndex = useRef(0);
-  const gestureManager = GestureManager({
-    nodeId: id,
-    nodeValue: value,
-    infoIndex,
-    r, 
-    activeTouches,
-    proximityRef });
+  const gestureManager = GestureManager({ nodeId: id, nodeValue: value, infoIndex, r, activeTouches });
 
   // Check if a touch is inside the node's main area
   const isInsideCircle = useCallback((touchX, touchY) => {
@@ -115,21 +107,29 @@ const Node = ({ id, cx, cy, r, pitch, value, links }) => {
   }, [handleNodeTouchEnd, handleNodeTouchMove]);
 
   return (
-  <>
-    <circle
-          ref={circleRef}
-          cx={cx}
-          cy={cy}
-          r={radius}
-          fill="lightblue"
-          onTouchStart={handleNodeTouchStart}
-          onTouchEnd={handleNodeTouchEnd}
-          onTouchMove={handleNodeTouchMove}
-          style={{ cursor: 'pointer', transition: 'r 0.2s ease' }}
-        />
-      <LinkProximity ref={proximityRef} nodeId={id} links={links} />
-      </>
-    
+    <g>
+      {/* Visualization of the detection range for isWithinRadius */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r + 35}
+        fill="none"
+        stroke="orange"
+        strokeDasharray="5,5"
+        strokeWidth="1"
+      />
+      <circle
+        ref={circleRef}
+        cx={cx}
+        cy={cy}
+        r={radius}
+        fill="lightblue"
+        onTouchStart={handleNodeTouchStart}
+        onTouchEnd={handleNodeTouchEnd}
+        onTouchMove={handleNodeTouchMove}
+        style={{ cursor: 'pointer', transition: 'r 0.2s ease' }}
+      />
+    </g>
   );
 };
 
