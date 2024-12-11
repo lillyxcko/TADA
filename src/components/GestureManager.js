@@ -1,12 +1,13 @@
 import { useRef } from 'react';
+import { SoundManager } from './SoundManager';
 
-let isSpeaking = false;
+let isSpeaking = false; // Prevent overlapping TTS
 
 const speakValue = (text) => {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.onstart = () => isSpeaking = true;
-  utterance.onend = () => isSpeaking = false;
+  utterance.onstart = () => (isSpeaking = true);
+  utterance.onend = () => (isSpeaking = false);
   synth.speak(utterance);
 };
 
@@ -16,28 +17,28 @@ const getDistance = (touch1, touch2) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches }) => {
+export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches, proximityRef }) => {
   const touchesByNode = useRef(new Map());
+
+  const resetTouchState = (nodeTouches) => {
+    nodeTouches.secondTapPending = false;
+    nodeTouches.secondTouchStartTime = null; // Ensure the timer is cleared
+  };
 
   const handleTouchStart = (nodeId, touch) => {
     if (!touchesByNode.current.has(nodeId)) {
-      touchesByNode.current.set(nodeId, { firstTouch: touch, secondTapPending: false, isActiveTouch: true, secondTouchStartTime: null });
+      touchesByNode.current.set(nodeId, {
+        firstTouch: touch,
+        secondTapPending: false,
+        isActiveTouch: true,
+        secondTouchStartTime: null,
+        navInterval: null, 
+      });
     }
-
+  
     const nodeTouches = touchesByNode.current.get(nodeId);
     nodeTouches.firstTouch = touch;
-    nodeTouches.secondTapPending = false;
-  };
-
-  const handleSecondTouch = (nodeId, secondTouch) => {
-    const nodeTouches = touchesByNode.current.get(nodeId);
-    const { firstTouch } = nodeTouches;
-
-    if (firstTouch && getDistance(firstTouch, secondTouch) <= 150) {
-      nodeTouches.secondTapPending = true;
-          nodeTouches.secondTouchStartTime = null; // Reset any previous second touch
-      nodeTouches.secondTouchStartTime = performance.now(); // Record the start time of the second touch
-    }
+    nodeTouches.secondTapPending = false; // Reset second tap state
   };
 
   const findClosestNodeWithinRange = (touch) => {
@@ -54,24 +55,93 @@ export const GestureManager = ({ nodeId, nodeValue, infoIndex, r, activeTouches 
     });
     return closestNodeId;
   };
+
+  const handleSecondTouch = (nodeId, secondTouch) => {
+    const nodeTouches = touchesByNode.current.get(nodeId);
+    const { firstTouch } = nodeTouches;
   
+    if (!firstTouch) return;
+  
+    const distance = getDistance(firstTouch, secondTouch);
+    if (distance <= 150) {
+      if (nodeTouches.secondTapPending) {
+        return; // Prevent duplicate handling
+      }
+  
+      // Start the timer for the second tap
+      nodeTouches.secondTouchStartTime = performance.now();
+      nodeTouches.secondTapPending = true;
+  
+      // Continuously check duration
+      const interval = setInterval(() => {
+        const duration = performance.now() - nodeTouches.secondTouchStartTime;
+  
+        if (duration > 300) {
+          if (!nodeTouches.isNavigating) {
+            console.log(`Switching to navigation mode for node ${nodeId}`);
+            SoundManager.stopNodeSound(nodeId); // Stop the node sound only here
+            //speakValue("find links");
+
+            // Trigger LinkProximity
+            if (proximityRef && proximityRef.current) {
+              proximityRef.current.startProximityMode();
+            }
+            nodeTouches.isNavigating = true; // Set navigation mode flag
+          }
+  
+          clearInterval(nodeTouches.navInterval); // Stop checking after switching mode
+          nodeTouches.navInterval = null; // Reset the interval reference
+        }
+      }, 50); // Check every 50ms
+  
+      nodeTouches.navInterval = interval; // Store the interval ID
+    }
+  };
+
   const handleTouchEnd = (e) => {
     const secondTouch = e.changedTouches[0];
     const closestNode = findClosestNodeWithinRange(secondTouch);
   
     if (closestNode && touchesByNode.current.has(closestNode)) {
       const nodeTouches = touchesByNode.current.get(closestNode);
-      const { secondTapPending, secondTouchStartTime } = nodeTouches;
-
-      if (secondTapPending && !isSpeaking && activeTouches.current.size > 0) {
-        const duration = secondTouchStartTime ? Math.round(performance.now() - secondTouchStartTime) : 0; // To find duration
-        const textToSpeak = `${nodeValue[infoIndex.current]}`;
-
-        speakValue(textToSpeak);
-        infoIndex.current = (infoIndex.current + 1) % nodeValue.length; 
+      const { secondTapPending, secondTouchStartTime, navInterval, isNavigating } = nodeTouches;
+  
+      // Clear navigation interval if it exists
+      if (navInterval) {
+        clearInterval(navInterval);
+        nodeTouches.navInterval = null;
       }
-      nodeTouches.secondTapPending = false;
-      nodeTouches.secondTouchStartTime = null; // Reset after use
+  
+      if (secondTapPending && secondTouchStartTime) {
+        const duration = Math.round(performance.now() - nodeTouches.secondTouchStartTime);
+  
+        if (duration < 300) {
+          // Second tap ended before 300ms
+          console.log(`Second tap ended before 300ms (${duration}ms). Triggering TTS.`);
+          if (!isSpeaking && activeTouches.current.size > 0) {
+            const textToSpeak = `${nodeValue[infoIndex.current]}`;
+            speakValue(textToSpeak);
+  
+            infoIndex.current = (infoIndex.current + 1) % nodeValue.length;
+          }
+        } else if (isNavigating) {
+          console.log(`Exiting navigation mode for node ${closestNode}`);
+          nodeTouches.isNavigating = false; // Reset navigation flag
+        }
+  
+        // Do not stop the node sound for short taps
+        if (duration >= 300 && !isNavigating) {
+          console.log(`Second tap held longer than 300ms (${duration}ms).`);
+          SoundManager.stopNodeSound(closestNode); // Stop sound only for long taps
+        }
+  
+        // Reset the timer and state
+        resetTouchState(nodeTouches);
+      }
+
+      if (proximityRef && proximityRef.current) {
+        proximityRef.current.stopProximityMode();
+      }
     }
   };
 
